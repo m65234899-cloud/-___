@@ -87,4 +87,5 @@ client.on('interactionCreate', async (interaction) => {
     }
 });
 
-client.login(config.TOKEN);
+// آخر سطر في السكربت
+client.login(process.env.TOKEN);
