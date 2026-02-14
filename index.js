@@ -1,5 +1,3 @@
-require('dotenv').config();
-
 const { Client, GatewayIntentBits, Partials, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
 const client = new Client({
     intents: [
@@ -10,56 +8,26 @@ const client = new Client({
     partials: [Partials.Channel]
 });
 
-const ADMIN_ID = '1472225010134421676'; // انت فقط
+// ID المستخدم اللي يقدر يستلم ويغلق التكت (انت)
+const ADMIN_ID = '1472225010134421676';
+
+// كاتقوري التذاكر
 const TICKET_CATEGORY = '1467200518999900533';
 
-client.once('ready', () => {
-    console.log(`${client.user.tag} جاهز!`);
-});
+// رابط الصورة المباشر
+const TICKET_IMAGE = 'https://files.fm/thumb_show.php?i=fm86nxtzd2'; // أو رابط مباشر للصورة الكبيرة
 
-client.on('messageCreate', async (message) => {
+client.once('ready', () => console.log(`${client.user.tag} جاهز!`));
+
+client.on('messageCreate', async message => {
     if (message.content === '!تكت' && !message.author.bot) {
 
         const embed = new EmbedBuilder()
-            .setDescription('__حياك الله في المتجر افتح تكت وسيتم الرد عليك في اسرع وقت__')
-            .setImage('https://cdn.discordapp.com/attachments/1462097862975426570/1466111641514152080/image.png')
+            .setDescription(`مرحبا <@${message.author.id}> | <@&${ADMIN_ID}>`) // منشن الشخص + الرتبة
+            .setImage(TICKET_IMAGE)
             .setColor('Green');
 
         const row = new ActionRowBuilder()
-            .addComponents(
-                new ButtonBuilder()
-                    .setCustomId('شراء_غرض')
-                    .setLabel('شراء غرض')
-                    .setStyle(ButtonStyle.Success),
-                new ButtonBuilder()
-                    .setCustomId('الدعم_الفني')
-                    .setLabel('الدعم الفني')
-                    .setStyle(ButtonStyle.Success)
-            );
-
-        await message.channel.send({ embeds: [embed], components: [row] });
-    }
-});
-
-client.on('interactionCreate', async (interaction) => {
-    if (!interaction.isButton()) return;
-
-    if (interaction.customId === 'شراء_غرض' || interaction.customId === 'الدعم_الفني') {
-        const category = interaction.guild.channels.cache.get(TICKET_CATEGORY);
-        if (!category) return interaction.reply({ content: 'تعذر إيجاد الكاتقوري.', ephemeral: true });
-
-        const ticketChannel = await interaction.guild.channels.create({
-            name: `تكت-${interaction.user.username}`,
-            type: 0,
-            parent: category.id,
-            permissionOverwrites: [
-                { id: interaction.user.id, allow: ['ViewChannel', 'SendMessages'] },
-                { id: ADMIN_ID, allow: ['ViewChannel', 'SendMessages', 'ManageChannels'] },
-                { id: interaction.guild.roles.everyone.id, deny: ['ViewChannel'] },
-            ],
-        });
-
-        const ticketRow = new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder()
                     .setCustomId('استلام_التذكره')
@@ -71,21 +39,42 @@ client.on('interactionCreate', async (interaction) => {
                     .setStyle(ButtonStyle.Danger)
             );
 
-        await ticketChannel.send({ content: `مرحبا <@${interaction.user.id}> <@${ADMIN_ID}>`, components: [ticketRow] });
+        // إرسال التكت في كاتقوري محدد
+        const category = message.guild.channels.cache.get(TICKET_CATEGORY);
+        if (!category) return message.channel.send('تعذر إيجاد الكاتقوري.');
 
-        await interaction.reply({ content: `تم فتح التكت: ${ticketChannel}`, ephemeral: true });
+        const ticketChannel = await message.guild.channels.create({
+            name: `تكت-${message.author.username}`,
+            type: 0,
+            parent: category.id,
+            permissionOverwrites: [
+                { id: message.author.id, allow: ['ViewChannel', 'SendMessages'] },
+                { id: ADMIN_ID, allow: ['ViewChannel', 'SendMessages', 'ManageChannels'] },
+                { id: message.guild.roles.everyone.id, deny: ['ViewChannel'] },
+            ],
+        });
+
+        await ticketChannel.send({ embeds: [embed], components: [row] });
+
+        await message.reply({ content: `تم فتح التكت: ${ticketChannel}`, ephemeral: true });
     }
+});
 
+client.on('interactionCreate', async interaction => {
+    if (!interaction.isButton()) return;
+
+    // استلام التكت
     if (interaction.customId === 'استلام_التذكره') {
         if (interaction.user.id !== ADMIN_ID) return interaction.reply({ content: 'انت ما تقدر تستخدم هذا الزر.', ephemeral: true });
         await interaction.reply({ content: 'تم استلام التذكره ✅', ephemeral: true });
     }
 
+    // إغلاق التكت
     if (interaction.customId === 'اغلاق_التذكره') {
         if (interaction.user.id !== ADMIN_ID) return interaction.reply({ content: 'انت ما تقدر تستخدم هذا الزر.', ephemeral: true });
         await interaction.channel.delete();
     }
 });
 
-// آخر سطر في السكربت
+// تشغيل البوت من Secret مباشرة
 client.login(process.env.TOKEN);
