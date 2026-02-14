@@ -1,7 +1,6 @@
 const {
   Client,
   GatewayIntentBits,
-  Partials,
   EmbedBuilder,
   ButtonBuilder,
   ButtonStyle,
@@ -13,35 +12,40 @@ const client = new Client({
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent
-  ],
-  partials: [Partials.Channel]
+  ]
 });
 
-const ADMIN_ROLE_ID = "1472225010134421676"; // رتبتك
+const ADMIN_ROLE_ID = "1472225010134421676"; // رتبة المشرفين
 const TICKET_CATEGORY = "1467200518999900533";
 
-const TICKET_IMAGE = "https://cdn.discordapp.com/attachments/1466506759966425119/1472239828925153314/image.png";
+const TICKET_IMAGE =
+  "https://cdn.discordapp.com/attachments/1466506759966425119/1472239828925153314/image.png";
 
+let ticketCounter = 1;
+
+// تشغيل
 client.once("ready", () => {
-  console.log(`${client.user.tag} شغال تمام ✅`);
+  console.log("✅ البوت شغال");
 });
 
+
+// رسالة البداية !تكت
 client.on("messageCreate", async (message) => {
-  if (message.content === "!تكت" && !message.author.bot) {
+  if (message.content === "!تكت") {
 
     const embed = new EmbedBuilder()
-      .setDescription("___ افتح تذكرة من هنا___")
+      .setDescription("__حياك الله في المتجر افتح تكت وسيتم الرد عليك في اسرع وقت__")
       .setImage(TICKET_IMAGE)
-      .setColor("Green");
+      .setColor("Purple");
 
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
-        .setCustomId("شراء_غرض")
+        .setCustomId("ticket_buy")
         .setLabel("شراء غرض")
         .setStyle(ButtonStyle.Success),
 
       new ButtonBuilder()
-        .setCustomId("الدعم_الفني")
+        .setCustomId("ticket_support")
         .setLabel("الدعم الفني")
         .setStyle(ButtonStyle.Success)
     );
@@ -53,16 +57,22 @@ client.on("messageCreate", async (message) => {
   }
 });
 
+
+// فتح التكت
 client.on("interactionCreate", async (interaction) => {
   if (!interaction.isButton()) return;
 
-  if (
-    interaction.customId === "شراء_غرض" ||
-    interaction.customId === "الدعم_الفني"
-  ) {
+  // إنشاء تكت
+  if (interaction.customId === "ticket_buy" || interaction.customId === "ticket_support") {
 
+    let القسم =
+      interaction.customId === "ticket_buy"
+        ? "شراء غرض"
+        : "الدعم الفني";
+
+    // إنشاء قناة
     const ticketChannel = await interaction.guild.channels.create({
-      name: `تكت-${interaction.user.username}`,
+      name: `ticket-${ticketCounter}`,
       type: 0,
       parent: TICKET_CATEGORY,
 
@@ -73,7 +83,7 @@ client.on("interactionCreate", async (interaction) => {
         },
         {
           id: ADMIN_ROLE_ID,
-          allow: ["ViewChannel", "SendMessages", "ManageChannels"]
+          allow: ["ViewChannel", "SendMessages"]
         },
         {
           id: interaction.guild.roles.everyone.id,
@@ -82,55 +92,90 @@ client.on("interactionCreate", async (interaction) => {
       ]
     });
 
+    // Embed داخل التذكرة نفس الصورة
     const ticketEmbed = new EmbedBuilder()
-      .setDescription(`مرحبا <@${interaction.user.id}> | <@&${ADMIN_ROLE_ID}>`)
-      .setImage(TICKET_IMAGE)
-      .setColor("Green");
+      .setColor("Purple")
+      .setAuthor({
+        name: "نظام التذاكر",
+        iconURL: interaction.guild.iconURL()
+      })
+      .addFields(
+        {
+          name: "👤 مالك التذكرة",
+          value: `<@${interaction.user.id}>`,
+          inline: false
+        },
+        {
+          name: "🛡 مشرفي التذاكر",
+          value: `<@&${ADMIN_ROLE_ID}>`,
+          inline: false
+        },
+        {
+          name: "📅 تاريخ التذكرة",
+          value: `<t:${Math.floor(Date.now() / 1000)}:F>`,
+          inline: false
+        },
+        {
+          name: "🔢 رقم التذكرة",
+          value: `${ticketCounter}`,
+          inline: false
+        },
+        {
+          name: "❓ قسم التذكرة",
+          value: القسم,
+          inline: false
+        }
+      )
+      .setImage(TICKET_IMAGE);
 
-    const ticketButtons = new ActionRowBuilder().addComponents(
+    // أزرار الإدارة
+    const buttons = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
-        .setCustomId("استلام_التذكره")
-        .setLabel("استلام التذكره")
+        .setCustomId("claim_ticket")
+        .setLabel("استلام التذكرة")
         .setStyle(ButtonStyle.Success),
 
       new ButtonBuilder()
-        .setCustomId("اغلاق_التذكره")
-        .setLabel("إغلاق التذكره")
+        .setCustomId("close_ticket")
+        .setLabel("إغلاق التذكرة")
         .setStyle(ButtonStyle.Danger)
     );
 
     await ticketChannel.send({
+      content: `<@${interaction.user.id}> | <@&${ADMIN_ROLE_ID}>`,
       embeds: [ticketEmbed],
-      components: [ticketButtons]
+      components: [buttons]
     });
 
     await interaction.reply({
-      content: `✅ تم فتح التكت: ${ticketChannel}`,
+      content: `✅ تم فتح التذكرة: ${ticketChannel}`,
       ephemeral: true
     });
+
+    ticketCounter++;
   }
 
-
-  if (interaction.customId === "استلام_التذكره") {
+  // استلام التذكرة (أي شخص معه الرتبة)
+  if (interaction.customId === "claim_ticket") {
 
     if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID))
       return interaction.reply({
-        content: "❌ انت ما تقدر تستخدم هذا الزر.",
+        content: "❌ ما تقدر تستخدم الزر",
         ephemeral: true
       });
 
     await interaction.reply({
-      content: "✅ تم استلام التذكره",
+      content: "✅ تم استلام التذكرة",
       ephemeral: true
     });
   }
 
-
-  if (interaction.customId === "اغلاق_التذكره") {
+  // إغلاق التذكرة
+  if (interaction.customId === "close_ticket") {
 
     if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID))
       return interaction.reply({
-        content: "❌ انت ما تقدر تستخدم هذا الزر.",
+        content: "❌ ما تقدر تستخدم الزر",
         ephemeral: true
       });
 
