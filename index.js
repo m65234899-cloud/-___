@@ -11,7 +11,8 @@ const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMembers // ضروري للترحيب
   ]
 });
 
@@ -33,7 +34,6 @@ client.on("guildMemberAdd", async (member) => {
   const channel = member.guild.channels.cache.get("1472300112029028570"); // روم الترحيب
   if (!channel) return;
 
-  // رسالة الترحيب مع مسافة بين عدد الأعضاء والإخبار
   const embed = new EmbedBuilder()
     .setColor("#00ffff") // اللون السماوي
     .setDescription(
@@ -45,7 +45,8 @@ client.on("guildMemberAdd", async (member) => {
 
   channel.send({ embeds: [embed] });
 });
-// رسالة البداية !تكت
+
+// ===================== رسالة البداية !تكت =====================
 client.on("messageCreate", async (message) => {
   if (message.content === "!تكت") {
 
@@ -73,8 +74,7 @@ client.on("messageCreate", async (message) => {
   }
 });
 
-
-// فتح التكت
+// ===================== فتح التكت =====================
 client.on("interactionCreate", async (interaction) => {
   if (!interaction.isButton()) return;
 
@@ -108,7 +108,7 @@ client.on("interactionCreate", async (interaction) => {
       ]
     });
 
-    // Embed داخل التذكرة نفس الصورة
+    // Embed داخل التذكرة
     const ticketEmbed = new EmbedBuilder()
       .setColor("#000000")
       .setAuthor({
