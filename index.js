@@ -34,9 +34,9 @@ client.on("messageCreate", async (message) => {
   if (message.content === "!تكت") {
 
     const embed = new EmbedBuilder()
-      .setDescription("__حياك الله في المتجر افتح تكت وسيتم الرد عليك في اسرع وقت__")
+      .setDescription("___ افتح تذكرة من هنا ___")
       .setImage(TICKET_IMAGE)
-      .setColor("Purple");
+      .setColor("Secondary");
 
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
@@ -94,7 +94,7 @@ client.on("interactionCreate", async (interaction) => {
 
     // Embed داخل التذكرة نفس الصورة
     const ticketEmbed = new EmbedBuilder()
-      .setColor("Purple")
+      .setColor("Secondary")
       .setAuthor({
         name: "نظام التذاكر",
         iconURL: interaction.guild.iconURL()
