@@ -30,7 +30,7 @@ client.on("messageCreate", async (message) => {
   if (message.content === "!تكت" && !message.author.bot) {
 
     const embed = new EmbedBuilder()
-      .setDescription("__حياك الله في المتجر افتح تكت وسيتم الرد عليك في اسرع وقت__")
+      .setDescription("___ افتح تذكرة من هنا___")
       .setImage(TICKET_IMAGE)
       .setColor("Green");
 
