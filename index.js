@@ -28,7 +28,23 @@ client.once("ready", () => {
   console.log("✅ البوت شغال");
 });
 
+// ===================== بوت الترحيب =====================
+client.on("guildMemberAdd", async (member) => {
+  const channel = member.guild.channels.cache.get("1472300112029028570"); // روم الترحيب
+  if (!channel) return;
 
+  // رسالة الترحيب مع مسافة بين عدد الأعضاء والإخبار
+  const embed = new EmbedBuilder()
+    .setColor("#00ffff") // اللون السماوي
+    .setDescription(
+      `➜ 𝐖𝐞𝐥𝐜𝐨𝐦𝐞 ${member}\n\n➜ 𝐌𝐞𝐦𝐛𝐞𝐫𝐬－\`${member.guild.memberCount}\`\n\n➜ 𝐍𝐄𝐖𝐒`
+    )
+    .setImage(
+      "https://cdn.discordapp.com/attachments/1472300112029028570/1472301503334060064/image.png"
+    );
+
+  channel.send({ embeds: [embed] });
+});
 // رسالة البداية !تكت
 client.on("messageCreate", async (message) => {
   if (message.content === "!تكت") {
