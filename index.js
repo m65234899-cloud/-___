@@ -72,6 +72,55 @@ client.on("messageCreate", async (message) => {
       components: [row]
     });
   }
+
+  // ===================== أمر الضريبة بروبوت مع منشن !ض =====================
+  if (message.content.startsWith("!ض")) {
+    const args = message.content.split(" ");
+
+    // لازم منشن + مبلغ
+    const member = message.mentions.users.first();
+    if (!member) return message.reply("❌ لازم تمنشن شخص مثل: !ض @user 5m");
+
+    if (!args[2]) return message.reply("❌ اكتب مبلغ مثل: !ض @user 5m");
+
+    let amountStr = args[2].toLowerCase();
+    let amount = 0;
+
+    // دعم k / m
+    if (amountStr.endsWith("k")) {
+      amount = parseFloat(amountStr) * 1000;
+    } else if (amountStr.endsWith("m")) {
+      amount = parseFloat(amountStr) * 1000000;
+    } else {
+      amount = parseFloat(amountStr);
+    }
+
+    if (isNaN(amount) || amount <= 0)
+      return message.reply("❌ المبلغ غير صحيح");
+
+    // ✅ ضريبة بروبوت (5%)
+    const finalAmount = Math.ceil(amount / 0.95);
+
+    // الضريبة = النهائي - المبلغ
+    const tax = finalAmount - amount;
+
+    // أمر التحويل جاهز مع المنشن
+    const transferCommand = `c <@${member.id}> ${finalAmount}`;
+
+    const embed = new EmbedBuilder()
+      .setTitle("💳 حاسبة ضريبة بروبوت")
+      .setColor("#00ffff")
+      .setDescription(
+        `👤 **المستلم:** ${member}\n\n` +
+        `💰 **المبلغ المطلوب:** \`${amount.toLocaleString()}\`\n\n` +
+        `🧾 **الضريبة (5%):** \`${tax.toLocaleString()}\`\n\n` +
+        `✅ **لازم تحول:** \`${finalAmount.toLocaleString()}\`\n\n` +
+        `📌 **أمر التحويل الجاهز:**\n\`\`\`${transferCommand}\`\`\``
+      )
+      .setFooter({ text: "نظام الضريبة مطابق لبروبوت" });
+
+    return message.channel.send({ embeds: [embed] });
+  }
 });
 
 // ===================== فتح التكت =====================
@@ -171,7 +220,7 @@ client.on("interactionCreate", async (interaction) => {
     ticketCounter++;
   }
 
-  // استلام التذكرة (أي شخص معه الرتبة)
+  // استلام التذكرة
   if (interaction.customId === "claim_ticket") {
 
     if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID))
