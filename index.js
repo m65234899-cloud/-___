@@ -108,7 +108,7 @@ client.on("messageCreate", async (message) => {
     const transferCommand = `c <@${member.id}> ${finalAmount}`;
 
     const embed = new EmbedBuilder()
-      .setTitle("💳 حاسبة ضريبة بروبوت")
+      .setTitle("💳 حاسبة ضريبة VAULTA")
       .setColor("#00ffff")
       .setDescription(
         `👤 **المستلم:** ${member}\n\n` +
@@ -117,7 +117,7 @@ client.on("messageCreate", async (message) => {
         `✅ **لازم تحول:** \`${finalAmount.toLocaleString()}\`\n\n` +
         `📌 **أمر التحويل الجاهز:**\n\`\`\`${transferCommand}\`\`\``
       )
-      .setFooter({ text: "نظام الضريبة مطابق لبروبوت" });
+      .setFooter({ text: "نظام سيرفر VAULTA" });
 
     return message.channel.send({ embeds: [embed] });
   }
