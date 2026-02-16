@@ -12,7 +12,7 @@ const client = new Client({
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildMembers // ضروري للترحيب
+    GatewayIntentBits.GuildMembers
   ]
 });
 
@@ -35,7 +35,7 @@ client.on("guildMemberAdd", async (member) => {
   if (!channel) return;
 
   const embed = new EmbedBuilder()
-    .setColor("#00ffff") // اللون السماوي
+    .setColor("#00ffff")
     .setDescription(
       `➜ 𝐖𝐞𝐥𝐜𝐨𝐦𝐞 ${member}\n\n➜ 𝐌𝐞𝐦𝐛𝐞𝐫𝐬－\`${member.guild.memberCount}\`\n\n➜ 𝐍𝐄𝐖𝐒`
     )
@@ -52,19 +52,18 @@ client.on("messageCreate", async (message) => {
 
     const embed = new EmbedBuilder()
       .setDescription("___ افتح تذكرة من هنا ___")
-      .setImage(TICKET_IMAGE)
+      .setImage("https://cdn.discordapp.com/attachments/1467200591204843717/1473000214381199481/IMG_7628.png?ex=69949dda&is=69934c5a&hm=7093fcc765c309e13ee33cb3acfaa37398ded0024ee&")
       .setColor("#000000");
 
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId("ticket_buy")
         .setLabel("شراء غرض")
-        .setStyle(ButtonStyle.Success),
-
+        .setStyle(ButtonStyle.Secondary), // رمادي
       new ButtonBuilder()
         .setCustomId("ticket_support")
         .setLabel("الدعم الفني")
-        .setStyle(ButtonStyle.Success)
+        .setStyle(ButtonStyle.Secondary) // رمادي
     );
 
     await message.channel.send({
@@ -76,35 +75,19 @@ client.on("messageCreate", async (message) => {
   // ===================== أمر الضريبة بروبوت مع منشن !ض =====================
   if (message.content.startsWith("!ض")) {
     const args = message.content.split(" ");
-
-    // لازم منشن + مبلغ
     const member = message.mentions.users.first();
     if (!member) return message.reply("❌ لازم تمنشن شخص مثل: !ض @user 5m");
-
     if (!args[2]) return message.reply("❌ اكتب مبلغ مثل: !ض @user 5m");
 
     let amountStr = args[2].toLowerCase();
     let amount = 0;
+    if (amountStr.endsWith("k")) amount = parseFloat(amountStr) * 1000;
+    else if (amountStr.endsWith("m")) amount = parseFloat(amountStr) * 1000000;
+    else amount = parseFloat(amountStr);
+    if (isNaN(amount) || amount <= 0) return message.reply("❌ المبلغ غير صحيح");
 
-    // دعم k / m
-    if (amountStr.endsWith("k")) {
-      amount = parseFloat(amountStr) * 1000;
-    } else if (amountStr.endsWith("m")) {
-      amount = parseFloat(amountStr) * 1000000;
-    } else {
-      amount = parseFloat(amountStr);
-    }
-
-    if (isNaN(amount) || amount <= 0)
-      return message.reply("❌ المبلغ غير صحيح");
-
-    // ✅ ضريبة بروبوت (5%)
     const finalAmount = Math.ceil(amount / 0.95);
-
-    // الضريبة = النهائي - المبلغ
     const tax = finalAmount - amount;
-
-    // أمر التحويل جاهز مع المنشن
     const transferCommand = `c <@${member.id}> ${finalAmount}`;
 
     const embed = new EmbedBuilder()
@@ -127,79 +110,56 @@ client.on("messageCreate", async (message) => {
 client.on("interactionCreate", async (interaction) => {
   if (!interaction.isButton()) return;
 
-  // إنشاء تكت
   if (interaction.customId === "ticket_buy" || interaction.customId === "ticket_support") {
 
-    let القسم =
-      interaction.customId === "ticket_buy"
-        ? "شراء غرض"
-        : "الدعم الفني";
+    let القسم = interaction.customId === "ticket_buy" ? "شراء غرض" : "الدعم الفني";
 
-    // إنشاء قناة
     const ticketChannel = await interaction.guild.channels.create({
       name: `ticket-${ticketCounter}`,
       type: 0,
       parent: TICKET_CATEGORY,
-
       permissionOverwrites: [
-        {
-          id: interaction.user.id,
-          allow: ["ViewChannel", "SendMessages"]
-        },
-        {
-          id: ADMIN_ROLE_ID,
-          allow: ["ViewChannel", "SendMessages"]
-        },
-        {
-          id: interaction.guild.roles.everyone.id,
-          deny: ["ViewChannel"]
-        }
-      ]
+        { id: interaction.user.id, allow: ["ViewChannel", "SendMessages"] },
+        { id: ADMIN_ROLE_ID, allow: ["ViewChannel", "SendMessages"] },
+        { id: interaction.guild.roles.everyone.id, deny: ["ViewChannel"] },
+      ],
     });
 
-    // Embed داخل التذكرة
+    // ===== الكلام أول شيء =====
+    await ticketChannel.send(`**${القسم}**`);
+
+    // ===== استبيان شراء الغرض =====
+    let answers = [];
+    if (interaction.customId === "ticket_buy") {
+      const filter = (m) => m.author.id === interaction.user.id;
+      const questions = ["نوع الغرض:", "طريقة التحويل:", "المبلغ:"];
+      for (let i = 0; i < questions.length; i++) {
+        await ticketChannel.send(questions[i]);
+        const collected = await ticketChannel.awaitMessages({ filter, max: 1, time: 300000 });
+        answers.push(collected.size > 0 ? collected.first().content : "-");
+      }
+    }
+
+    // ===== بعد الاستبيان الصورة =====
     const ticketEmbed = new EmbedBuilder()
       .setColor("#000000")
-      .setAuthor({
-        name: "نظام التذاكر",
-        iconURL: interaction.guild.iconURL()
-      })
-      .addFields(
-        {
-          name: "👤 مالك التذكرة",
-          value: `<@${interaction.user.id}>`,
-          inline: false
-        },
-        {
-          name: "🛡 مشرفي التذاكر",
-          value: `<@&${ADMIN_ROLE_ID}>`,
-          inline: false
-        },
-        {
-          name: "📅 تاريخ التذكرة",
-          value: `<t:${Math.floor(Date.now() / 1000)}:F>`,
-          inline: false
-        },
-        {
-          name: "🔢 رقم التذكرة",
-          value: `${ticketCounter}`,
-          inline: false
-        },
-        {
-          name: "❓ قسم التذكرة",
-          value: القسم,
-          inline: false
-        }
-      )
-      .setImage(TICKET_IMAGE);
+      .setImage(interaction.customId === "ticket_buy" ? 
+        "https://cdn.discordapp.com/attachments/1466506759966425119/1472995599509880977/DEF6F242-58F4-4BFB-9315-BD0DF84E3122.png?ex=6994998d&is=6993480d&hm=8166d9d568bc11c91bebddd724e632451798d65818ea8c058e9263117559dae0&"
+        : "https://cdn.discordapp.com/attachments/1466506759966425119/1472995890016030920/1E532655-FB80-42D4-B00C-8E74273084CA.png?ex=699499d3&is=69934853&hm=1a53f942402754998fc2f7ab9cf695605a46d419e8008c923b62bc60798e305d&");
 
-    // أزرار الإدارة
+    if (interaction.customId === "ticket_buy") {
+      ticketEmbed.addFields({
+        name: "📋 بيانات الطلب:",
+        value: `**نوع الغرض:** ${answers[0]}\n**طريقة التحويل:** ${answers[1]}\n**المبلغ:** ${answers[2]}`,
+      });
+    }
+
+    // ===== أزرار الإدارة =====
     const buttons = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId("claim_ticket")
         .setLabel("استلام التذكرة")
         .setStyle(ButtonStyle.Success),
-
       new ButtonBuilder()
         .setCustomId("close_ticket")
         .setLabel("إغلاق التذكرة")
