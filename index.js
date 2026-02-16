@@ -91,7 +91,7 @@ client.on("messageCreate", async (message) => {
 
     const embed = new EmbedBuilder()
       .setTitle("💳 حاسبة ضريبة VAULTA")
-      .setColor("#00ffff")
+      .setColor("#000000")
       .setDescription(
         `👤 **المستلم:** ${member}\n\n` +
         `💰 **المبلغ المطلوب:** \`${amount.toLocaleString()}\`\n\n` +
