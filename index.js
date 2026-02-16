@@ -192,7 +192,7 @@ client.on("interactionCreate", async (interaction) => {
       .setImage(
         interaction.customId === "ticket_buy"
           ? "https://cdn.discordapp.com/attachments/1466506759966425119/1472995599509880977/DEF6F242-58F4-4BFB-9315-BD0DF84E3122.png?ex=6994998d&is=6993480d&hm=8166d9d568bc11c91bebddd724e632451798d65818ea8c058e9263117559dae0&"
-          : "https://cdn.discordapp.com/attachments/1466506759966425119/1E532655-FB80-42D4-B00C-8E74273084CA.png?ex=699499d3&is=69934853&hm=1a53f942402754998fc2f7ab9cf695605a46d419e8008c923b62bc60798e305d&"
+          : "https://cdn.discordapp.com/attachments/1466506759966425119/1472995890016030920/1E532655-FB80-42D4-B00C-8E74273084CA.png?ex=699499d3&is=69934853&hm=1a53f942402754998fc2f7ab9cf695605a46d419e8008c923b62bc60798e305d&"
       );
 
     const buttons = new ActionRowBuilder().addComponents(
