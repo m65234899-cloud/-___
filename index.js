@@ -103,7 +103,30 @@ client.on("messageCreate", async (message) => {
 
     return message.channel.send({ embeds: [embed] });
   }
+// ===================== أمر !س =====================
+if (message.content.startsWith("!س")) {
+  const args = message.content.split(" ");
+  if (!args[1]) return message.reply("❌ اكتب المبلغ مثل: !س 100m");
 
+  let input = args[1].toLowerCase();
+  let amount = 0;
+
+  // دعم k / m
+  if (input.endsWith("m")) {
+    amount = parseFloat(input) * 1; // كل مليون واحد
+  } else if (input.endsWith("k")) {
+    amount = parseFloat(input) / 1000; // 1000k = 1m
+  } else {
+    amount = parseFloat(input);
+  }
+
+  if (isNaN(amount) || amount <= 0) return message.reply("❌ المبلغ غير صحيح");
+
+  // 1M = 0.5 ريال
+  const price = amount * 0.5;
+
+  return message.reply(`💰 سعر ${args[1]} = ${price.toLocaleString()} ريال سعودي`);
+}
   // ===== !بوتات =====
   if (message.content === "!بوتات") {
     const embed = new EmbedBuilder()
