@@ -116,7 +116,7 @@ client.on("messageCreate", async (message) => {
 
 حياك الله افتح تكت وموجودين دايماً <#1467200591204843717>`
       )
-      .setImage("https://cdn.discordapp.com/attachments/1466506330822152406/1473023224945049783/IMG_7631.png?ex=6994b348&is=699361c8&hm=72d100a4e3281edc80324f08f6afdb7db1b86338bf316446b161db8e1b7b7932&")
+      .setImage("https://cdn.discordapp.com/attachments/1466506330822152406/1473027952097624074/IMG_7631.png?ex=6994b7af&is=6993662f&hm=9af6afcb3d0feb4007e78e2946eaeb82a3d20effc76e246cf21645f9e3648b2d&")
       .setColor("#00ffff");
     return message.channel.send({ embeds: [embed] });
   }
