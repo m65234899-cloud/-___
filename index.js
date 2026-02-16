@@ -124,7 +124,7 @@ client.on("messageCreate", async (message) => {
   // ===== !كريدت =====
   if (message.content === "!كريدت") {
     const embed = new EmbedBuilder()
-      .setTitle("# __ اسعار الكريدت __")
+      .setTitle(" __ اسعار الكريدت __")
       .setDescription(
 `__C  1m__\n0.5 ريال سعودي
 __C 5m__\n2.5 ريال سعودي
