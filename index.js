@@ -70,7 +70,14 @@ client.on("messageCreate", async (message) => {
 
     await message.channel.send({ embeds: [embed], components: [row] });
   }
-
+// ===== !تحويل =====
+if (message.content === "!تحويل") {
+  const embed = new EmbedBuilder()
+    .setTitle("💳 رقم الآيبان للتحويل")
+    .setDescription("SA35 8000 0400 6080 1604 4543")
+    .setColor("#000000");
+  return message.channel.send({ embeds: [embed] });
+}
   // ===== !ض =====
   if (message.content.startsWith("!ض")) {
     const args = message.content.split(" ");
