@@ -34,12 +34,12 @@ client.on("guildMemberAdd", async (member) => {
   if (!channel) return;
 
   const embed = new EmbedBuilder()
-    .setColor("#00ffff")
+    .setColor("#000000")
     .setDescription(
       `➜ 𝐖𝐞𝐥𝐜𝐨𝐦𝐞 ${member}\n\n➜ 𝐌𝐞𝐦𝐛𝐞𝐫𝐬－\`${member.guild.memberCount}\`\n\n➜ 𝐍𝐄𝐖𝐒`
     )
     .setImage(
-      "https://cdn.discordapp.com/attachments/1472300112029028570/1472301503334060064/image.png"
+      "https://cdn.discordapp.com/attachments/1472300112029028570/1473041874574119064/IMG_7634.png?ex=6994c4a6&is=69937326&hm=4aa49e309aa160101a3ac918b925fe077bbc5f3e700bec534dc8ab7c9d0ab07b&"
     );
 
   channel.send({ embeds: [embed] });
