@@ -120,7 +120,7 @@ client.on("messageCreate", async (message) => {
 حياك الله افتح تكت وموجودين دايماً <#1467200591204843717>`
       )
       .setImage("https://cdn.discordapp.com/attachments/1466506330822152406/1473027952097624074/IMG_7631.png?ex=6994b7af&is=6993662f&hm=9af6afcb3d0feb4007e78e2946eaeb82a3d20effc76e246cf21645f9e3648b2d&")
-      .setColor("#00ffff");
+      .setColor("#000000");
     return message.channel.send({ embeds: [embed] });
   }
 
@@ -137,7 +137,7 @@ __C 15m__\n7.5 ريال سعودي
 لشراء كريدت من هنا <#1467200591204843717>`
       )
       .setImage("https://cdn.discordapp.com/attachments/1472221936288272581/1473024074581147800/IMG_7632.png?ex=6994b412&is=69936292&hm=77e68dd22fcc121980a194445faaf7f1f2bd81c617db86ef5f8a57b0fe9b3a06&")
-      .setColor("#00ffff");
+      .setColor("#000000");
     return message.channel.send({ embeds: [embed] });
   }
 
@@ -155,7 +155,7 @@ __C 15m__\n7.5 ريال سعودي
 أي شي ودك في افتح تذكرة : <#1467200591204843717>`
       )
       .setImage("https://cdn.discordapp.com/attachments/1466506501479989615/1473029400202051636/IMG_7633.png?ex=6994b908&is=69936788&hm=e04fea6ee08ff07b69e5590189882724f89019486b6530108cf7eb8a86447189&")
-      .setColor("#00ffff");
+      .setColor("#000000");
     return message.channel.send({ embeds: [embed] });
   }
 
