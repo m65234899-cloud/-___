@@ -160,7 +160,7 @@ if (message.content.startsWith("!س")) {
   if (isNaN(amount) || amount <= 0) return message.reply("❌ المبلغ غير صحيح");
 
   // 1M = 0.5 ريال
-  const price = amount * 0.5;
+  const price = amount * 0.4;
 
   return message.reply(`💰 سعر ${args[1]} = ${price.toLocaleString()} ريال سعودي`);
 }
@@ -189,10 +189,10 @@ if (message.content.startsWith("!س")) {
     const embed = new EmbedBuilder()
       .setTitle(" __ اسعار الكريدت __")
       .setDescription(
-`__C  1m__\n0.5 ريال سعودي
-__C 5m__\n2.5 ريال سعودي
-__C 10m__\n5.0 ريال سعودي
-__C 15m__\n7.5 ريال سعودي
+`__C  1m__\n0.4 ريال سعودي
+__C 5m__\n2.0 ريال سعودي
+__C 10m__\n4.0 ريال سعودي
+__C 15m__\n6.0 ريال سعودي
 
 لشراء كريدت من هنا <#1467200591204843717>`
       )
