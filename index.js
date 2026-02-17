@@ -70,6 +70,36 @@ client.on("messageCreate", async (message) => {
 
     await message.channel.send({ embeds: [embed], components: [row] });
   }
+    // ===================== نظام الآراء =====================
+  const FEEDBACK_CHANNEL_ID = "1466506862760431882";
+
+  if (message.channel.id === FEEDBACK_CHANNEL_ID) {
+    // تجاهل رسائل البوتات
+    if (message.author.bot) return;
+
+    // حفظ نص الرأي
+    const feedback = message.content;
+
+    // حذف رسالة الشخص
+    await message.delete();
+
+    // إرسال الرأي بشكل Embed
+    const embed = new EmbedBuilder()
+      .setColor("#000000") // أسود
+      .setThumbnail(message.guild.iconURL({ dynamic: true })) // شعار السيرفر فوق يمين
+      .setTitle("📢 رأي جديد")
+      .setDescription(
+        `**رأي الشخص هنا |** ${message.author}\n\n` +
+        `**الرأي الخاص به |** ${feedback}`
+      )
+      .setFooter({ text: "نظام الآراء - VAULTA" });
+
+    // إرسال الإيمبد
+    const sentMessage = await message.channel.send({ embeds: [embed] });
+
+    // إضافة تقييم واحد فقط 🩶
+    await sentMessage.react("🩶");
+  }
 // ===== !تحويل =====
 if (message.content === "!تحويل") {
   const embed = new EmbedBuilder()
