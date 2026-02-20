@@ -160,7 +160,7 @@ if (message.content.startsWith("!س")) {
   if (isNaN(amount) || amount <= 0) return message.reply("❌ المبلغ غير صحيح");
 
   // 1M = 0.5 ريال
-  const price = amount * 0.4;
+  const price = amount * 0.55;
 
   return message.reply(`💰 سعر ${args[1]} = ${price.toLocaleString()} ريال سعودي`);
 }
