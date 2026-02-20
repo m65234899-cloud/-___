@@ -175,7 +175,7 @@ if (message.content.startsWith("!س")) {
 
 حياك الله افتح تكت وموجودين دايماً <#1467200591204843717>`
       )
-      .setImage("https://i.postimg.cc/3wvns2Zq/IMG_7631.png")
+      .setImage("https://cdn.discordapp.com/attachments/1473378884857630821/1474544465405546629/IMG_7631.png?ex=699a3c0c&is=6998ea8c&hm=f7a68a3664ecf40aa48c5a1283416fcc6bd0c969a4da312bf99c0ed4a4c8560c&")
       .setColor("#000000");
     return message.channel.send({ embeds: [embed] });
   }
@@ -192,7 +192,7 @@ __C 15m__\n8.25 ريال سعودي
 
 لشراء كريدت من هنا <#1467200591204843717>`
       )
-      .setImage("https://i.postimg.cc/jj7ZpyhF/IMG_7632.png")
+      .setImage("https://cdn.discordapp.com/attachments/1473378884857630821/1474544464763551925/IMG_7632.png?ex=699a3c0c&is=6998ea8c&hm=8311980f30ae6ef28d86d73bcec6cce50000921f4c8ef854b19da3e0e03aff3c&")
       .setColor("#000000");
     return message.channel.send({ embeds: [embed] });
   }
@@ -210,7 +210,7 @@ __C 15m__\n8.25 ريال سعودي
 تصميم بنر سيرفر __C 2m__
 أي شي ودك في افتح تذكرة : <#1467200591204843717>`
       )
-      .setImage("https://i.postimg.cc/Hx1BdjS4/IMG_7633.png")
+      .setImage("https://cdn.discordapp.com/attachments/1473378884857630821/1474544465057415270/IMG_7633.png?ex=699a3c0c&is=6998ea8c&hm=db2e209e2b9efcdda85d30da1ff8d1f2902e5e0986abaadeefa14be970005dcb&")
       .setColor("#000000");
     return message.channel.send({ embeds: [embed] });
   }
