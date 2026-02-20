@@ -247,7 +247,7 @@ client.on("interactionCreate", async (interaction) => {
       )
       .setImage(
         interaction.customId === "ticket_buy"
-          ? "https://i.postimg.cc/3x6tft2D/DEF6F242_58F4_4BFB_9315_BD0DF84E3122.png"
+          ? "https://cdn.discordapp.com/attachments/1473378884857630821/1474545943192928379/DEF6F242-58F4-4BFB-9315-BD0DF84E3122.png?ex=699a3d6c&is=6998ebec&hm=601956ea7d84bb43a1a3c1ab12384a91476a28a66bedbb1c05ebfad508b4082d&"
           : "https://i.postimg.cc/tJ30pLtD/1E532655-FB80-42D4-B00C-8E74273084CA.png"
       );
 
