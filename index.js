@@ -179,7 +179,7 @@ if (message.content.startsWith("!س")) {
 
 حياك الله افتح تكت وموجودين دايماً <#1467200591204843717>`
       )
-      .setImage("https://cdn.discordapp.com/attachments/1466506330822152406/1473027952097624074/IMG_7631.png?ex=6994b7af&is=6993662f&hm=9af6afcb3d0feb4007e78e2946eaeb82a3d20effc76e246cf21645f9e3648b2d&")
+      .setImage("https://i.postimg.cc/3wvns2Zq/IMG_7631.png")
       .setColor("#000000");
     return message.channel.send({ embeds: [embed] });
   }
@@ -196,7 +196,7 @@ __C 15m__\n6.0 ريال سعودي
 
 لشراء كريدت من هنا <#1467200591204843717>`
       )
-      .setImage("https://cdn.discordapp.com/attachments/1472221936288272581/1473024074581147800/IMG_7632.png?ex=6994b412&is=69936292&hm=77e68dd22fcc121980a194445faaf7f1f2bd81c617db86ef5f8a57b0fe9b3a06&")
+      .setImage("https://i.postimg.cc/jj7ZpyhF/IMG_7632.png")
       .setColor("#000000");
     return message.channel.send({ embeds: [embed] });
   }
@@ -214,7 +214,7 @@ __C 15m__\n6.0 ريال سعودي
 تصميم بنر سيرفر __C 2m__
 أي شي ودك في افتح تذكرة : <#1467200591204843717>`
       )
-      .setImage("https://cdn.discordapp.com/attachments/1466506501479989615/1473029400202051636/IMG_7633.png?ex=6994b908&is=69936788&hm=e04fea6ee08ff07b69e5590189882724f89019486b6530108cf7eb8a86447189&")
+      .setImage("https://i.postimg.cc/Hx1BdjS4/IMG_7633.png")
       .setColor("#000000");
     return message.channel.send({ embeds: [embed] });
   }
@@ -251,8 +251,8 @@ client.on("interactionCreate", async (interaction) => {
       )
       .setImage(
         interaction.customId === "ticket_buy"
-          ? "https://cdn.discordapp.com/attachments/1466506759966425119/1472995599509880977/DEF6F242-58F4-4BFB-9315-BD0DF84E3122.png?ex=6994998d&is=6993480d&hm=8166d9d568bc11c91bebddd724e632451798d65818ea8c058e9263117559dae0&"
-          : "https://cdn.discordapp.com/attachments/1466506759966425119/1472995890016030920/1E532655-FB80-42D4-B00C-8E74273084CA.png?ex=699499d3&is=69934853&hm=1a53f942402754998fc2f7ab9cf695605a46d419e8008c923b62bc60798e305d&"
+          ? "https://i.postimg.cc/3x6tft2D/DEF6F242_58F4_4BFB_9315_BD0DF84E3122.png"
+          : "https://i.postimg.cc/tJ30pLtD/1E532655-FB80-42D4-B00C-8E74273084CA.png"
       );
 
     const buttons = new ActionRowBuilder().addComponents(
