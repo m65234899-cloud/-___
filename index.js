@@ -13,7 +13,7 @@ const client = new Client({
 client.on('messageCreate', async (message) => {
   if (message.content === '!تكت') {
     const embed = new EmbedBuilder()
-      .setColor('#808080')  // هنا تم تغيير اللون إلى اللون الرصاصي
+      .setColor('#808080')  // تغيير اللون إلى اللون الرصاصي
       .setTitle('اختار الخدمة التي ترغب بها')
       .setImage('https://cdn.discordapp.com/attachments/1473378884857630821/1477516185653481543/2C52B4D6-9301-46A4-8BC2-5D7127E89961.png?ex=69a50bad&is=69a3ba2d&hm=2c1bed54842ee39c0f1e74da169657cd1751f575522cf3826308498da5fa4066&')
       .setDescription('يرجى اختيار واحدة من الخيارات أدناه');
@@ -28,10 +28,11 @@ client.on('messageCreate', async (message) => {
         )
     );
 
-    await message.reply({ embeds: [embed], components: [row] });
+    await message.reply({ embeds: [embed], components: [row], ephemeral: true }); // جعل الرد مخفي فقط للمستخدم
   }
 });
 
+// التعامل مع تفاعل المستخدم واختيار الخدمة
 client.on('interactionCreate', async (interaction) => {
   if (!interaction.isSelectMenu()) return;
 
@@ -41,7 +42,7 @@ client.on('interactionCreate', async (interaction) => {
     const selectedOption = values[0];
 
     if (selectedOption === 'buy_item') {
-      // عرض نموذج "شراء غرض" مع حقول مرتبة
+      // عرض نموذج "شراء غرض" مع الحقول المطلوبة
       const modal = new ModalBuilder()
         .setCustomId('buy_item_modal')
         .setTitle('شراء غرض');
@@ -77,7 +78,7 @@ client.on('interactionCreate', async (interaction) => {
     } else if (selectedOption === 'support') {
       // عرض نموذج "الدعم الفني"
       const embed = new EmbedBuilder()
-        .setColor('#808080')  // تغيير اللون إلى اللون الرصاصي
+        .setColor('#808080')  // اللون الرصاصي
         .setTitle('الدعم الفني')
         .setDescription('يرجى كتابة مشكلتك أو استفسارك في الحقول أدناه');
 
@@ -92,6 +93,7 @@ client.on('interactionCreate', async (interaction) => {
     }
   }
 
+  // التعامل مع التقديم بعد ملء النموذج
   if (interaction.isModalSubmit()) {
     if (interaction.customId === 'buy_item_modal') {
       const itemType = interaction.fields.getTextInputValue('item_type');
@@ -100,15 +102,31 @@ client.on('interactionCreate', async (interaction) => {
 
       const member = interaction.member;
       const ticketName = `ticket-${member.user.username}`;
+      
+      // إنشاء قناة التذكرة بشكل خاص فقط للمستخدم والإدارة
       const ticketChannel = await interaction.guild.channels.create({
         name: ticketName,
         type: 'GUILD_TEXT',
         parent: '1473378884857630821', // ID القسم حيث سيتم إنشاء القنوات
+        permissionOverwrites: [
+          {
+            id: interaction.guild.id,
+            deny: ['VIEW_CHANNEL'], // لا يمكن للجميع رؤية القناة
+          },
+          {
+            id: '1472225010134421676', // ID المسؤول
+            allow: ['VIEW_CHANNEL'], // يسمح للمسؤول برؤية القناة
+          },
+          {
+            id: member.id,  // يسمح فقط للمستخدم برؤية التذكرة
+            allow: ['VIEW_CHANNEL'],
+          }
+        ],
       });
 
       // عرض التفاصيل في التذكرة
       const embed = new EmbedBuilder()
-        .setColor('#808080')  // اللون الرصاصي هنا أيضاً
+        .setColor('#808080')  // اللون الرصاصي
         .setTitle('تذكرة شراء غرض')
         .setDescription('التفاصيل التالية:')
         .addFields(
@@ -118,7 +136,7 @@ client.on('interactionCreate', async (interaction) => {
         );
 
       await ticketChannel.send({
-        content: `<@1472225010134421676>`, // منشن للمسؤول
+        content: `<@1472225010134421676>`, // منشن المسؤول
         embeds: [embed],
       });
 
