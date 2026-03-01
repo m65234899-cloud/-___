@@ -1,4 +1,4 @@
-require('dotenv').config();  // تحميل متغيرات البيئة (تأكد أنك تستخدم dotenv إذا كانت البيئة لديك تحتوي على توكن)
+require('dotenv').config();  // تأكد من أنك تستخدم dotenv إذا كان التوكن في البيئة الخاصة بك
 
 const { Client, GatewayIntentBits, ActionRowBuilder, SelectMenuBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, TextInputBuilder, ModalBuilder } = require('discord.js');
 const client = new Client({
@@ -13,9 +13,10 @@ const client = new Client({
 client.on('messageCreate', async (message) => {
   if (message.content === '!تكت') {
     const embed = new EmbedBuilder()
-      .setColor('#0099ff')
-      .setTitle('اختار نوع التذكرى  من هنا')
-      .setImage('https://cdn.discordapp.com/attachments/1473378884857630821/1477516185653481543/2C52B4D6-9301-46A4-8BC2-5D7127E89961.png?ex=69a50bad&is=69a3ba2d&hm=2c1bed54842ee39c0f1e74da169657cd1751f575522cf3826308498da5fa4066&');
+      .setColor('#808080')  // هنا تم تغيير اللون إلى اللون الرصاصي
+      .setTitle('اختار الخدمة التي ترغب بها')
+      .setImage('https://cdn.discordapp.com/attachments/1473378884857630821/1477516185653481543/2C52B4D6-9301-46A4-8BC2-5D7127E89961.png?ex=69a50bad&is=69a3ba2d&hm=2c1bed54842ee39c0f1e74da169657cd1751f575522cf3826308498da5fa4066&')
+      .setDescription('يرجى اختيار واحدة من الخيارات أدناه');
 
     const row = new ActionRowBuilder().addComponents(
       new SelectMenuBuilder()
@@ -40,7 +41,7 @@ client.on('interactionCreate', async (interaction) => {
     const selectedOption = values[0];
 
     if (selectedOption === 'buy_item') {
-      // عرض النموذج للشراء مع الحقول المطلوبة
+      // عرض نموذج "شراء غرض" مع حقول مرتبة
       const modal = new ModalBuilder()
         .setCustomId('buy_item_modal')
         .setTitle('شراء غرض');
@@ -48,30 +49,37 @@ client.on('interactionCreate', async (interaction) => {
       // الحقول المطلوبة
       const itemTypeInput = new TextInputBuilder()
         .setCustomId('item_type')
-        .setLabel('نوع الغرض')
-        .setStyle('SHORT')
+        .setLabel('ما هو طلبك؟')
+        .setStyle('PARAGRAPH')
         .setRequired(true);
 
       const transferMethodInput = new TextInputBuilder()
         .setCustomId('transfer_method')
-        .setLabel('طريقة التحويل')
+        .setLabel('ما هي طريقة الدفع؟ (ريال، كاش، ريزر، كريديتو، ...)')
         .setStyle('SHORT')
+        .setRequired(true);
+
+      const detailsInput = new TextInputBuilder()
+        .setCustomId('details')
+        .setLabel('تفاصيل طلبك')
+        .setStyle('PARAGRAPH')
         .setRequired(true);
 
       // ربط الحقول في صفوف
       const row1 = new ActionRowBuilder().addComponents(itemTypeInput);
       const row2 = new ActionRowBuilder().addComponents(transferMethodInput);
+      const row3 = new ActionRowBuilder().addComponents(detailsInput);
 
-      modal.addComponents(row1, row2);
+      modal.addComponents(row1, row2, row3);
 
       await interaction.showModal(modal);
 
     } else if (selectedOption === 'support') {
-      // عرض النموذج للدعم الفني
+      // عرض نموذج "الدعم الفني"
       const embed = new EmbedBuilder()
-        .setColor('#00ff00')
+        .setColor('#808080')  // تغيير اللون إلى اللون الرصاصي
         .setTitle('الدعم الفني')
-        .setDescription('أدخل مشكلتك أو استفسارك أدناه');
+        .setDescription('يرجى كتابة مشكلتك أو استفسارك في الحقول أدناه');
 
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
@@ -88,6 +96,7 @@ client.on('interactionCreate', async (interaction) => {
     if (interaction.customId === 'buy_item_modal') {
       const itemType = interaction.fields.getTextInputValue('item_type');
       const transferMethod = interaction.fields.getTextInputValue('transfer_method');
+      const details = interaction.fields.getTextInputValue('details');
 
       const member = interaction.member;
       const ticketName = `ticket-${member.user.username}`;
@@ -99,15 +108,15 @@ client.on('interactionCreate', async (interaction) => {
 
       // عرض التفاصيل في التذكرة
       const embed = new EmbedBuilder()
-        .setColor('#0000ff')
+        .setColor('#808080')  // اللون الرصاصي هنا أيضاً
         .setTitle('تذكرة شراء غرض')
         .setDescription('التفاصيل التالية:')
         .addFields(
-          { name: 'نوع الغرض', value: itemType },
-          { name: 'طريقة التحويل', value: transferMethod }
+          { name: 'ما هو طلبك؟', value: itemType },
+          { name: 'طريقة الدفع', value: transferMethod },
+          { name: 'تفاصيل الطلب', value: details }
         );
 
-      // إرسال التذكرة إلى القناة
       await ticketChannel.send({
         content: `<@1472225010134421676>`, // منشن للمسؤول
         embeds: [embed],
