@@ -1,3 +1,4 @@
+// استيراد المكتبات اللازمة من discord.js
 const { Client, GatewayIntentBits, StringSelectMenuBuilder, ActionRowBuilder } = require('discord.js');
 require('dotenv').config();
 
@@ -96,4 +97,4 @@ client.on('messageCreate', async message => {
 });
 
 // تسجيل الدخول بالبوت
-client.login(token);
+client.login(TOKEN);
