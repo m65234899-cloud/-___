@@ -1,178 +1,97 @@
-require('dotenv').config();  // تأكد من أنك تستخدم dotenv إذا كان التوكن في البيئة الخاصة بك
+import discord
+from discord.ext import commands
+from discord import ui
+import asyncio
+import os
+from dotenv import load_dotenv
 
-const { Client, GatewayIntentBits, ActionRowBuilder, SelectMenuBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, TextInputBuilder, ModalBuilder } = require('discord.js');
-const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-  ],
-});
+# تحميل التوكن من البيئة
+load_dotenv()  # تحميل المتغيرات من ملف .env
+TOKEN = os.getenv("DISCORD_TOKEN")
 
-// عند تنفيذ الأمر !تكت
-client.on('messageCreate', async (message) => {
-  if (message.content === '!تكت') {
-    const embed = new EmbedBuilder()
-      .setColor('#808080')  // تغيير اللون إلى اللون الرصاصي
-      .setTitle('اختار الخدمة التي ترغب بها')
-      .setImage('https://cdn.discordapp.com/attachments/1473378884857630821/1477516185653481543/2C52B4D6-9301-46A4-8BC2-5D7127E89961.png')
-      .setDescription('يرجى اختيار واحدة من الخيارات أدناه');
+intents = discord.Intents.default()
+intents.message_content = True
+intents.members = True
+bot = commands.Bot(command_prefix='!', intents=intents)
 
-    const row = new ActionRowBuilder().addComponents(
-      new SelectMenuBuilder()
-        .setCustomId('menu_select')
-        .setPlaceholder('اختار خدمة')
-        .addOptions(
-          { label: 'شراء غرض', value: 'buy_item' },
-          { label: 'الدعم الفني', value: 'support' }
-        )
-    );
+ADMIN_ROLE_ID = 1472225010134421676 
+BANNER_URL = "https://cdn.discordapp.com/attachments/1473378884857630821/1477532261963403284/2C52B4D6-9301-46A4-8BC2-5D7127E89961.png"
 
-    await message.reply({ embeds: [embed], components: [row], ephemeral: true }); // جعل الرد مخفي فقط للمستخدم
-  }
-});
+# --- أزرار التحكم الرمادية داخل التذكرة ---
+class TicketControls(ui.View):
+    def __init__(self, member: discord.Member):
+        super().__init__(timeout=None)
+        self.member = member
 
-// التعامل مع تفاعل المستخدم واختيار الخدمة
-client.on('interactionCreate', async (interaction) => {
-  if (!interaction.isSelectMenu()) return;
+    @ui.button(label="استلام التذكرة", style=discord.ButtonStyle.secondary, custom_id="claim")
+    async def claim(self, interaction: discord.Interaction, button: ui.Button):
+        if not interaction.user.get_role(ADMIN_ROLE_ID):
+            return await interaction.response.send_message("❌ الرتبة المطلوبة غير متوفرة لديك.", ephemeral=True)
+        button.disabled = True
+        button.label = "تم الاستلام"
+        await interaction.response.edit_message(view=self)
+        await interaction.followup.send(embed=discord.Embed(description=f"✅ تم استلام التذكرة بواسطة {interaction.user.mention}", color=0x2f3136))
 
-  const { customId, values } = interaction;
+    @ui.button(label="استدعاء العضو (خاص)", style=discord.ButtonStyle.secondary, custom_id="call")
+    async def call(self, interaction: discord.Interaction, button: ui.Button):
+        if not interaction.user.get_role(ADMIN_ROLE_ID):
+            return await interaction.response.send_message("❌ الرتبة المطلوبة غير متوفرة لديك.", ephemeral=True)
+        try:
+            embed_dm = discord.Embed(title="🔔 تنبيه استدعاء", description=f"الإدارة بانتظارك في تذكرتك: {interaction.channel.mention}", color=0x2f3136)
+            embed_dm.set_image(url=BANNER_URL)
+            await self.member.send(embed=embed_dm)
+            await interaction.response.send_message(f"✅ تم إرسال رسالة خاصة للعضو.", ephemeral=True)
+        except:
+            await interaction.response.send_message("❌ الخاص مغلق عند العضو.", ephemeral=True)
 
-  if (customId === 'menu_select') {
-    const selectedOption = values[0];
+    @ui.button(label="حذف التذكرة", style=discord.ButtonStyle.secondary, custom_id="close")
+    async def close(self, interaction: discord.Interaction, button: ui.Button):
+        if not interaction.user.get_role(ADMIN_ROLE_ID):
+            return await interaction.response.send_message("❌ الرتبة المطلوبة غير متوفرة لديك.", ephemeral=True)
+        await interaction.response.send_message("⚠️ سيتم حذف التذكرة خلال 5 ثوانٍ...")
+        await asyncio.sleep(5)
+        await interaction.channel.delete()
 
-    if (selectedOption === 'buy_item') {
-      // عرض نموذج "شراء غرض" مع الحقول المطلوبة
-      const modal = new ModalBuilder()
-        .setCustomId('buy_item_modal')
-        .setTitle('شراء غرض');
+# --- نافذة الدعم الفني ---
+class SupportModal(ui.Modal, title='الدعم الفني'):
+    problem = ui.TextInput(label='أشرح مشكلتك', style=discord.TextStyle.paragraph, placeholder='اكتب تفاصيل المشكلة هنا...', required=True)
+    async def on_submit(self, interaction: discord.Interaction):
+        channel = await interaction.guild.create_text_channel(name=f"ticket-{interaction.user.name}", overwrites={interaction.guild.default_role: discord.PermissionOverwrite(view_channel=False), interaction.user: discord.PermissionOverwrite(view_channel=True, send_messages=True), interaction.guild.get_role(ADMIN_ROLE_ID): discord.PermissionOverwrite(view_channel=True, send_messages=True)})
+        embed = discord.Embed(title="𝐒𝐮𝐩𝐩𝐨𝐫𝐭 𝐓𝐢𝐜𝐤𝐞𝐭", color=0x2f3136)
+        embed.add_field(name="المشكلة :", value=f"\`\`\`{self.problem.value}\`\`\`")
+        embed.set_image(url=BANNER_URL)
+        await channel.send(content=f"{interaction.user.mention} <@&{ADMIN_ROLE_ID}>", embed=embed, view=TicketControls(interaction.user))
+        await interaction.response.send_message(f"✅ تم فتح تذكرة دعم: {channel.mention}", ephemeral=True)
 
-      // الحقول المطلوبة
-      const itemTypeInput = new TextInputBuilder()
-        .setCustomId('item_type')
-        .setLabel('ما هو طلبك؟')
-        .setStyle('PARAGRAPH')
-        .setRequired(true);
+# --- نافذة الطلبات ---
+class OrderModal(ui.Modal, title='فتح تذكرة طلبات'):
+    order = ui.TextInput(label='ما هو طلبك ؟', required=True)
+    payment = ui.TextInput(label='ماهي طريقة دفعك ؟', required=True)
+    details = ui.TextInput(label='تفاصيل طلبك', style=discord.TextStyle.paragraph, required=True)
+    async def on_submit(self, interaction: discord.Interaction):
+        channel = await interaction.guild.create_text_channel(name=f"order-{interaction.user.name}", overwrites={interaction.guild.default_role: discord.PermissionOverwrite(view_channel=False), interaction.user: discord.PermissionOverwrite(view_channel=True, send_messages=True), interaction.guild.get_role(ADMIN_ROLE_ID): discord.PermissionOverwrite(view_channel=True, send_messages=True)})
+        embed = discord.Embed(title="𝐒𝐮𝐩𝐩𝐨𝐫𝐭 𝐓𝐢𝐜𝐤𝐞𝐭", color=0x2f3136)
+        embed.add_field(name="الطلب :", value=f"\`\`\`{self.order.value}\`\`\`", inline=False)
+        embed.add_field(name="الدفع :", value=f"\`\`\`{self.payment.value}\`\`\`", inline=False)
+        embed.add_field(name="التفاصيل :", value=f"\`\`\`{self.details.value}\`\`\`", inline=False)
+        embed.set_image(url=BANNER_URL)
+        await channel.send(content=f"{interaction.user.mention} <@&{ADMIN_ROLE_ID}>", embed=embed, view=TicketControls(interaction.user))
+        await interaction.response.send_message(f"✅ تذكرتك: {channel.mention}", ephemeral=True)
 
-      const transferMethodInput = new TextInputBuilder()
-        .setCustomId('transfer_method')
-        .setLabel('ما هي طريقة الدفع؟ (ريال، كاش، ريزر، كريديتو، ...)')
-        .setStyle('SHORT')
-        .setRequired(true);
+@bot.command(name="تكت")
+async def ticket_cmd(ctx):
+    embed = discord.Embed(title="اختار الخدمة التي ترغب بها", color=0x2f3136)
+    embed.set_image(url=BANNER_URL)
+    view = ui.View(timeout=None)
+    select = ui.Select(placeholder="إختار خدمة", options=[discord.SelectOption(label="الطلبات", emoji="🛒"), discord.SelectOption(label="الدعم الفني", emoji="🛠️"), discord.SelectOption(label="إعادة تحميل", emoji="🔄")])
+    async def callback(interaction):
+        val = interaction.data['values'][0]
+        if val == "الطلبات": await interaction.response.send_modal(OrderModal())
+        elif val == "الدعم الفني": await interaction.response.send_modal(SupportModal())
+        else: await interaction.response.send_message("🔄 تم التحديث", ephemeral=True)
+    select.callback = callback
+    view.add_item(select)
+    await ctx.send(embed=embed, view=view)
 
-      const detailsInput = new TextInputBuilder()
-        .setCustomId('details')
-        .setLabel('تفاصيل طلبك')
-        .setStyle('PARAGRAPH')
-        .setRequired(true);
-
-      // ربط الحقول في صفوف
-      const row1 = new ActionRowBuilder().addComponents(itemTypeInput);
-      const row2 = new ActionRowBuilder().addComponents(transferMethodInput);
-      const row3 = new ActionRowBuilder().addComponents(detailsInput);
-
-      modal.addComponents(row1, row2, row3);
-
-      await interaction.showModal(modal);
-
-    } else if (selectedOption === 'support') {
-      // عرض نموذج "الدعم الفني"
-      const embed = new EmbedBuilder()
-        .setColor('#808080')  // اللون الرصاصي
-        .setTitle('الدعم الفني')
-        .setDescription('يرجى كتابة مشكلتك أو استفسارك في الحقول أدناه');
-
-      const row = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId('submit_support')
-          .setLabel('إرسال')
-          .setStyle(ButtonStyle.Primary)
-      );
-
-      await interaction.update({ embeds: [embed], components: [row] });
-    }
-  }
-
-  // التعامل مع التقديم بعد ملء النموذج
-  if (interaction.isModalSubmit()) {
-    if (interaction.customId === 'buy_item_modal') {
-      const itemType = interaction.fields.getTextInputValue('item_type');
-      const transferMethod = interaction.fields.getTextInputValue('transfer_method');
-      const details = interaction.fields.getTextInputValue('details');
-
-      const member = interaction.member;
-      const ticketName = `ticket-${member.user.username}`;
-      
-      // إنشاء قناة التذكرة بشكل خاص فقط للمستخدم والإدارة
-      const ticketChannel = await interaction.guild.channels.create({
-        name: ticketName,
-        type: 'GUILD_TEXT',
-        parent: '1473378884857630821', // ID القسم حيث سيتم إنشاء القنوات
-        permissionOverwrites: [
-          {
-            id: interaction.guild.id,
-            deny: ['VIEW_CHANNEL'], // لا يمكن للجميع رؤية القناة
-          },
-          {
-            id: '1472225010134421676', // ID المسؤول
-            allow: ['VIEW_CHANNEL'], // يسمح للمسؤول برؤية القناة
-          },
-          {
-            id: member.id,  // يسمح فقط للمستخدم برؤية التذكرة
-            allow: ['VIEW_CHANNEL'],
-          }
-        ],
-      });
-
-      // عرض التفاصيل في التذكرة
-      const embed = new EmbedBuilder()
-        .setColor('#808080')  // اللون الرصاصي
-        .setTitle('تذكرة شراء غرض')
-        .setDescription('التفاصيل التالية:')
-        .addFields(
-          { name: 'ما هو طلبك؟', value: itemType },
-          { name: 'طريقة الدفع', value: transferMethod },
-          { name: 'تفاصيل الطلب', value: details }
-        );
-
-      await ticketChannel.send({
-        content: `<@1472225010134421676>`, // منشن المسؤول
-        embeds: [embed],
-      });
-
-      // خيارات إغلاق التذكرة
-      const optionsRow = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId('rename_ticket')
-          .setLabel('إعادة التسمية')
-          .setStyle(ButtonStyle.Secondary),
-        new ButtonBuilder()
-          .setCustomId('close_ticket')
-          .setLabel('إغلاق التذكرة')
-          .setStyle(ButtonStyle.Danger)
-      );
-
-      await ticketChannel.send({ components: [optionsRow] });
-    }
-  }
-
-  // إغلاق التذكرة
-  if (interaction.customId === 'close_ticket') {
-    const ticketChannel = interaction.channel;
-    ticketChannel.delete();
-    // تسجيل اللوج في قناة اللوج
-    const logChannel = await interaction.guild.channels.cache.get('1473378884857630821');
-    logChannel.send(`تم إغلاق التذكرة: ${ticketChannel.name}`);
-    await interaction.update({ content: 'تم إغلاق التذكرة.', components: [] });
-  }
-
-  // إعادة التسمية
-  if (interaction.customId === 'rename_ticket') {
-    const ticketChannel = interaction.channel;
-    await ticketChannel.setName('new-ticket-name'); // يمكنك هنا تغيير الاسم
-    await interaction.update({ content: 'تم تغيير اسم التذكرة.', components: [] });
-  }
-});
-
-// استخدام التوكن من البيئة
-client.login(process.env.TOKEN);
+# استخدام التوكن من البيئة
+bot.run(os.getenv('DISCORD_TOKEN'))
