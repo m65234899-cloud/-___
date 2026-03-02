@@ -94,4 +94,4 @@ async def ticket_cmd(ctx):
     await ctx.send(embed=embed, view=view)
 
 # استخدام التوكن من البيئة
-bot.run(os.getenv('DISCORD_TOKEN'))
+bot.run(os.getenv('TOKEN'))
