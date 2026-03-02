@@ -15,7 +15,7 @@ client.on('messageCreate', async (message) => {
     const embed = new EmbedBuilder()
       .setColor('#808080')  // تغيير اللون إلى اللون الرصاصي
       .setTitle('اختار الخدمة التي ترغب بها')
-      .setImage('https://cdn.discordapp.com/attachments/1473378884857630821/1477516185653481543/2C52B4D6-9301-46A4-8BC2-5D7127E89961.png?ex=69a50bad&is=69a3ba2d&hm=2c1bed54842ee39c0f1e74da169657cd1751f575522cf3826308498da5fa4066&')
+      .setImage('https://cdn.discordapp.com/attachments/1473378884857630821/1477516185653481543/2C52B4D6-9301-46A4-8BC2-5D7127E89961.png')
       .setDescription('يرجى اختيار واحدة من الخيارات أدناه');
 
     const row = new ActionRowBuilder().addComponents(
