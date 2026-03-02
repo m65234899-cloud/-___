@@ -1,9 +1,9 @@
 // استيراد المكتبات اللازمة من discord.js
 const { Client, GatewayIntentBits, StringSelectMenuBuilder, ActionRowBuilder } = require('discord.js');
-require('dotenv').config();
+require('dotenv').config(); // لتحميل التوكن من المتغيرات البيئية
 
-// تحميل التوكن من ملف .env
-const token = process.env.DISCORD_TOKEN;
+// تحميل التوكن من البيئة (Railway)
+const token = process.env.TOKEN; // تأكد أن المتغير البيئي هو "TOKEN"
 
 // إنشاء العميل
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
@@ -97,4 +97,4 @@ client.on('messageCreate', async message => {
 });
 
 // تسجيل الدخول بالبوت
-client.login(TOKEN);
+client.login(token);  // استخدام التوكن من المتغير البيئي
