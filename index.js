@@ -2,6 +2,12 @@ import discord
 from discord.ext import commands
 from discord.ui import Button, View, Select
 import asyncio
+from dotenv import load_dotenv
+import os
+
+# تحميل التوكن من ملف .env
+load_dotenv()
+TOKEN = os.getenv("DISCORD_TOKEN")
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -112,4 +118,4 @@ async def on_ready():
     print(f'تم تسجيل الدخول كـ {bot.user}')
 
 # تشغيل البوت
-bot.run('MTQ3MjIyODQ2MjMzNjAyMDU1Mg.GALbIe.vyrzfd47HIiy-7-EUDuBmxk0Xgyd_xmR9yK-KM')
+bot.run(TOKEN)
