@@ -18,6 +18,8 @@ const client = new Client({
 const TOKEN = process.env.TOKEN; 
 const ADMIN_ROLE_ID = '1472225010134421676';
 const LOG_CHANNEL_ID = '1473378884857630821';
+const BUY_CATEGORY_ID = '1478604299549544601'; // كتاقوري الشراء
+const SUPPORT_CATEGORY_ID = '1477992348033093683'; // كتاقوري الدعم
 const MAIN_IMAGE = 'https://cdn.discordapp.com/attachments/1473378884857630821/1477532261963403284/2C52B4D6-9301-46A4-8BC2-5D7127E89961.png';
 
 let orderCounter = 1;
@@ -35,7 +37,6 @@ client.once('ready', () => console.log(`✅ ${client.user.tag} متصل وجاه
 client.on('messageCreate', async (message) => {
     if (message.author.bot || !message.guild) return;
 
-    // --- أمر !تكت ---
     if (message.content === '!تكت') {
         if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) return;
         const mainEmbed = new EmbedBuilder()
@@ -57,7 +58,6 @@ client.on('messageCreate', async (message) => {
         await message.channel.send({ embeds: [mainEmbed], components: [menu] });
     }
 
-    // --- أمر !y لتأكيد الطلب ---
     if (message.content.startsWith('!y')) {
         if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) return;
         const args = message.content.split(/ +/);
@@ -79,7 +79,6 @@ client.on('messageCreate', async (message) => {
         await message.channel.send({ content: `${targetUser}`, embeds: [confirmEmbed], components: [row] });
     }
 
-    // --- أمر الضريبة !tax ---
     if (message.content.startsWith('!tax')) {
         const args = message.content.split(/ +/);
         if (args[1]) {
@@ -88,7 +87,6 @@ client.on('messageCreate', async (message) => {
         }
     }
 
-    // --- أمر !رسالة ---
     if (message.content.startsWith('!رسالة')) {
         if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) return;
         const args = message.content.slice('!رسالة'.length).trim().split(/ +/);
@@ -134,9 +132,13 @@ client.on('interactionCreate', async (interaction) => {
         const type = interaction.customId.replace('modal_', '');
         const isBuy = type === 'buy_option';
         
+        // تحديد الكتاقوري بناءً على نوع التذكرة
+        const targetParent = isBuy ? BUY_CATEGORY_ID : SUPPORT_CATEGORY_ID;
+
         const channel = await interaction.guild.channels.create({
             name: `${isBuy ? 'order' : 'support'}-${interaction.user.username}`,
             type: ChannelType.GuildText,
+            parent: targetParent, 
             permissionOverwrites: [
                 { id: interaction.guild.id, deny: [PermissionFlagsBits.ViewChannel] },
                 { id: interaction.user.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] },
@@ -157,7 +159,7 @@ client.on('interactionCreate', async (interaction) => {
             new ButtonBuilder().setCustomId('delete_btn').setLabel('حذف التذكرة').setStyle(ButtonStyle.Danger)
         );
 
-        await channel.send({ content: `<@${interaction.user.id}> | الإداره <@&${ADMIN_ROLE_ID}>`, embeds: [eb], components: [b] });
+        await channel.send({ content: `<@${interaction.user.id}> | <@&${ADMIN_ROLE_ID}>`, embeds: [eb], components: [b] });
         await interaction.editReply(`✅ تم فتح تذكرتك: ${channel}`);
     }
 
@@ -194,6 +196,7 @@ client.on('interactionCreate', async (interaction) => {
         }
     }
 });
+
 
 // استدعاء التوكن من السكرت (Secrets)
 client.login(process.env.TOKEN); 
