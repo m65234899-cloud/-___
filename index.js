@@ -126,7 +126,7 @@ client.on('interactionCreate', async (interaction) => {
             new ButtonBuilder().setCustomId('delete_btn').setLabel('حذف التذكرة').setStyle(ButtonStyle.Danger)
         );
 
-        await channel.send({ content: `<@${interaction.user.id}> | الإدارة <@&${ADMIN_ROLE_ID}>`, embeds: [ticketEmbed], components: [btns] });
+        await channel.send({ content: `<@${interaction.user.id}> | <@&${ADMIN_ROLE_ID}>`, embeds: [ticketEmbed], components: [btns] });
         await interaction.editReply(`✅ تذكرتك: ${channel}`);
     }
 
