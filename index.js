@@ -15,7 +15,7 @@ const client = new Client({
 });
 
 // --- الإعدادات ---
-const TOKEN = process.env['سكرت']; // تم تعديله ليقرأ من سكرت
+const TOKEN = process.env.TOKEN; // تم تعديله ليقرأ من سكرت
 const ADMIN_ROLE_ID = '1472225010134421676';
 const LOG_CHANNEL_ID = '1473378884857630821';
 const BUY_CATEGORY_ID = '1478604299549544601'; 
@@ -210,4 +210,4 @@ client.on('interactionCreate', async (interaction) => {
     }
 });
 
-client.login(TOKEN);
+client.login(process.env.TOKEN);
