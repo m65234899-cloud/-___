@@ -39,7 +39,26 @@ client.on('messageCreate', async (message) => {
         );
         await message.channel.send({ embeds: [mainEmbed], components: [menu] });
     }
+# دالة تحويل الاختصارات (ضفها فوق في السكربت أو خارج الأمر)
+def parse_amount(amount_str):
+    amount_str = str(amount_str).lower()
+    multipliers = {'k': 1000, 'm': 1000000, 'b': 1000000000}
+    if amount_str[-1] in multipliers:
+        return int(float(amount_str[:-1]) * multipliers[amount_str[-1]])
+    return int(amount_str)
 
+# كود الأمر (انسخه وضعه مع أوامرك)
+@bot.command()
+async def tax(ctx, amount: str):
+    try:
+        price = parse_amount(amount)
+        # الحسبة الصحيحة لضريبة البروبوت 5%
+        total_with_tax = int(price / 0.95) + 1
+        # يرسل الرقم فقط كما طلبت لسهولة النسخ
+        await ctx.send(f"{total_with_tax}")
+    except:
+        await ctx.send("يرجى إدخال مبلغ صحيح (مثال: 1m أو 500k)")
+}
     // --- أمر !رسالة (روم أو رتبة خاص بـ منشن) ---
     if (message.content.startsWith('!رسالة')) {
         if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) return;
