@@ -15,11 +15,11 @@ const client = new Client({
 });
 
 // --- الإعدادات ---
-const TOKEN = process.env.TOKEN; 
+const TOKEN = process.env['سكرت']; // تم تعديله ليقرأ من سكرت
 const ADMIN_ROLE_ID = '1472225010134421676';
 const LOG_CHANNEL_ID = '1473378884857630821';
-const BUY_CATEGORY_ID = '1478604299549544601'; // كتاقوري الشراء
-const SUPPORT_CATEGORY_ID = '1477992348033093683'; // كتاقوري الدعم
+const BUY_CATEGORY_ID = '1478604299549544601'; 
+const SUPPORT_CATEGORY_ID = '1477992348033093683'; 
 const MAIN_IMAGE = 'https://cdn.discordapp.com/attachments/1473378884857630821/1477532261963403284/2C52B4D6-9301-46A4-8BC2-5D7127E89961.png';
 
 let orderCounter = 1;
@@ -37,7 +37,7 @@ client.once('ready', () => console.log(`✅ ${client.user.tag} متصل وجاه
 client.on('messageCreate', async (message) => {
     if (message.author.bot || !message.guild) return;
 
-    // --- أمر !تكت ---
+    // أمر التكت
     if (message.content === '!تكت') {
         if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) return;
         const mainEmbed = new EmbedBuilder()
@@ -59,17 +59,13 @@ client.on('messageCreate', async (message) => {
         await message.channel.send({ embeds: [mainEmbed], components: [menu] });
     }
 
-    // --- أمر تأكيد طلب !y (مصحح) ---
+    // أمر !y لتأكيد الطلب
     if (message.content.startsWith('!y')) {
         if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) return;
-        
         const args = message.content.split(/ +/);
         const targetID = args[1];
-        
-        // حذف رسالة الأمر فوراً
         await message.delete().catch(() => null);
-
-        if (!targetID) return; 
+        if (!targetID) return;
 
         const targetUser = await client.users.fetch(targetID).catch(() => null);
         if (!targetUser) return;
@@ -83,11 +79,10 @@ client.on('messageCreate', async (message) => {
             new ButtonBuilder().setCustomId(`confirm_${targetID}`).setLabel('تاكيد الشراء').setStyle(ButtonStyle.Success),
             new ButtonBuilder().setCustomId(`cancel_${targetID}`).setLabel('إلغاء الشراء').setStyle(ButtonStyle.Danger)
         );
-
         await message.channel.send({ content: `${targetUser}`, embeds: [confirmEmbed], components: [row] });
     }
 
-    // --- أمر الضريبة !tax ---
+    // أمر الضريبة
     if (message.content.startsWith('!tax')) {
         const args = message.content.split(/ +/);
         if (args[1]) {
@@ -96,7 +91,7 @@ client.on('messageCreate', async (message) => {
         }
     }
 
-    // --- أمر !رسالة ---
+    // أمر الرسالة الجماعية
     if (message.content.startsWith('!رسالة')) {
         if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) return;
         const args = message.content.slice('!رسالة'.length).trim().split(/ +/);
@@ -115,11 +110,59 @@ client.on('messageCreate', async (message) => {
 });
 
 client.on('interactionCreate', async (interaction) => {
-    // التعامل مع التذاكر (Select Menu)
+    // الأزرار
+    if (interaction.isButton()) {
+        const [btnAction, targetId] = interaction.customId.split('_');
+
+        // التعامل مع أمر !y
+        if (btnAction === 'confirm' || btnAction === 'cancel') {
+            if (interaction.user.id !== targetId) return interaction.reply({ content: "❌ هذا الزر ليس لك!", ephemeral: true });
+            
+            if (btnAction === 'confirm') {
+                const num = orderCounter++;
+                await interaction.update({ content: `✅ تم تاكيد الطلب بنجاح بواسطة ${interaction.user}`, embeds: [], components: [] });
+                
+                try { 
+                    await interaction.user.send(`${interaction.user}\n\n✅ **تم تأكيد طلبك بنجاح!**\n📦 **رقم الطلب:** \`#${num}\`\n👤 **العميل:** ${interaction.user.username}`); 
+                } catch(e){}
+
+                const logChan = client.channels.cache.get(LOG_CHANNEL_ID);
+                if (logChan) {
+                    const logEmbed = new EmbedBuilder()
+                        .setColor(0x2ecc71)
+                        .setTitle('تأكيد طلب جديد')
+                        .addFields(
+                            { name: 'رقم الطلب:', value: `#${num}`, inline: false },
+                            { name: 'العميل:', value: `${interaction.user.username}`, inline: false },
+                            { name: 'ID العميل:', value: `${interaction.user.id}`, inline: false }
+                        )
+                        .setTimestamp();
+                    await logChan.send({ embeds: [logEmbed] });
+                }
+            } else if (btnAction === 'cancel') {
+                await interaction.update({ content: `❌ تم رفض شراء الطلب بواسطة ${interaction.user}`, embeds: [], components: [] });
+            }
+            return;
+        }
+
+        // أزرار التحكم بالتكت
+        if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) return;
+        if (interaction.customId === 'claim_btn') await interaction.channel.send(`🔒 تم استلام التذكره بواسطة: <@${interaction.user.id}>`);
+        if (interaction.customId === 'rename_btn') {
+            const m = new ModalBuilder().setCustomId('rename_modal').setTitle('تغيير الاسم');
+            const i = new TextInputBuilder().setCustomId('new_name_field').setLabel('اكتب الاسم الجديد').setStyle(TextInputStyle.Short).setRequired(true);
+            m.addComponents(new ActionRowBuilder().addComponents(i));
+            await interaction.showModal(m);
+        }
+        if (interaction.customId === 'delete_btn') {
+            setTimeout(() => interaction.channel.delete(), 2000);
+        }
+    }
+
+    // القائمة المنسدلة والمودال
     if (interaction.isStringSelectMenu() && interaction.customId === 'ticket_select') {
         const choice = interaction.values[0];
         if (choice === 'refresh') return interaction.reply({ content: '✅ تم تحديث القائمة.', ephemeral: true });
-
         const modal = new ModalBuilder().setCustomId(`modal_${choice}`).setTitle(choice === 'buy_option' ? 'طلب شراء' : 'الدعم الفني');
         if (choice === 'buy_option') {
             const item = new TextInputBuilder().setCustomId('item_field').setLabel('نوع الغرض').setStyle(TextInputStyle.Short).setRequired(true);
@@ -132,95 +175,39 @@ client.on('interactionCreate', async (interaction) => {
         await interaction.showModal(modal);
     }
 
-    // التعامل مع المودال (Submit)
     if (interaction.isModalSubmit()) {
         if (interaction.customId === 'rename_modal') {
             const n = interaction.fields.getTextInputValue('new_name_field');
             await interaction.channel.setName(n);
-            return interaction.reply(`✅ تم تغيير اسم التذكره لـ: ${n}`);
+            return interaction.reply(`✅ تم تغيير الاسم لـ: ${n}`);
         }
-
         await interaction.deferReply({ ephemeral: true });
         const type = interaction.customId.replace('modal_', '');
         const isBuy = type === 'buy_option';
-        
-        const targetParent = isBuy ? BUY_CATEGORY_ID : SUPPORT_CATEGORY_ID;
-
         const channel = await interaction.guild.channels.create({
             name: `${isBuy ? 'order' : 'support'}-${interaction.user.username}`,
             type: ChannelType.GuildText,
-            parent: targetParent, 
+            parent: isBuy ? BUY_CATEGORY_ID : SUPPORT_CATEGORY_ID,
             permissionOverwrites: [
                 { id: interaction.guild.id, deny: [PermissionFlagsBits.ViewChannel] },
                 { id: interaction.user.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] },
                 { id: ADMIN_ROLE_ID, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] },
             ],
         });
-
         const eb = new EmbedBuilder().setColor(0x808080);
         if (isBuy) {
             eb.setDescription(`**الطلب:** ${interaction.fields.getTextInputValue('item_field')}\n**طريقة الدفع:** ${interaction.fields.getTextInputValue('pay_field')}`);
         } else {
             eb.setDescription(`**المشكلة:** ${interaction.fields.getTextInputValue('issue_field')}`);
         }
-
         const b = new ActionRowBuilder().addComponents(
             new ButtonBuilder().setCustomId('claim_btn').setLabel('استلام التذكره').setStyle(ButtonStyle.Success),
             new ButtonBuilder().setCustomId('rename_btn').setLabel('تغيير اسم التذكره').setStyle(ButtonStyle.Primary),
             new ButtonBuilder().setCustomId('delete_btn').setLabel('حذف التذكرة').setStyle(ButtonStyle.Danger)
         );
-
         await channel.send({ content: `<@${interaction.user.id}> | <@&${ADMIN_ROLE_ID}>`, embeds: [eb], components: [b] });
         await interaction.editReply(`✅ تم فتح تذكرتك: ${channel}`);
     }
-
-    // التعامل مع الأزرار (Buttons)
-    if (interaction.isButton()) {
-        const [btnAction, targetId] = interaction.customId.split('_');
-
-        // أزرار أمر !y
-        if (btnAction === 'confirm' || btnAction === 'cancel') {
-            if (interaction.user.id !== targetId) return interaction.reply({ content: "❌ هذا الزر ليس لك!", ephemeral: true });
-            
-            if (btnAction === 'confirm') {
-                const num = orderCounter++;
-                await interaction.update({ content: `✅ تم تاكيد الطلب بنجاح بواسطة ${interaction.user}`, embeds: [], components: [] });
-                
-                try { 
-                    await interaction.user.send(
-                        `✅ **تم تأكيد طلبك بنجاح!**\n` +
-                        `📦 **رقم الطلب:** #${num}\n` +
-                        `👤 **العميل:** ${interaction.user.username}`
-                    ); 
-                } catch(e){}
-
-                const log = client.channels.cache.get(LOG_CHANNEL_ID);
-                if (log) log.send(`✅ تم التأكيد | رقم الطلب: #${num} | العميل: ${interaction.user.tag}`);
-            
-            } else if (btnAction === 'cancel') {
-                await interaction.update({ content: `❌ تم رفض شراء الطلب بواسطة ${interaction.user}`, embeds: [], components: [] });
-            }
-            return;
-        }
-
-        // أزرار التذكرة (للمشرفين)
-        if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) return interaction.reply({ content: 'للإدارة فقط!', ephemeral: true });
-
-        if (interaction.customId === 'claim_btn') await interaction.channel.send(`🔒 تم استلام التذكره بواسطة: <@${interaction.user.id}>`);
-        if (interaction.customId === 'rename_btn') {
-            const m = new ModalBuilder().setCustomId('rename_modal').setTitle('تغيير الاسم');
-            const i = new TextInputBuilder().setCustomId('new_name_field').setLabel('اكتب الاسم الجديد').setStyle(TextInputStyle.Short).setRequired(true);
-            m.addComponents(new ActionRowBuilder().addComponents(i));
-            await interaction.showModal(m);
-        }
-        if (interaction.customId === 'delete_btn') {
-            const log = client.channels.cache.get(LOG_CHANNEL_ID);
-            if (log) log.send(`🗑️ تذكرة محذوفة: ${interaction.channel.name}`);
-            setTimeout(() => interaction.channel.delete(), 2000);
-        }
-    }
 });
 
-// استدعاء التوكن من السكرت (Secrets)
-client.login(process.env.TOKEN); 
-
+client.login(TOKEN);
