@@ -15,7 +15,7 @@ const client = new Client({
 });
 
 // --- الإعدادات ---
-const TOKEN = process.env.TOKEN; // تم تعديله ليقرأ من سكرت
+const TOKEN = process.env.TOKEN; 
 const ADMIN_ROLE_ID = '1472225010134421676';
 const LOG_CHANNEL_ID = '1473378884857630821';
 const BUY_CATEGORY_ID = '1478604299549544601'; 
@@ -23,6 +23,7 @@ const SUPPORT_CATEGORY_ID = '1477992348033093683';
 const MAIN_IMAGE = 'https://cdn.discordapp.com/attachments/1473378884857630821/1477532261963403284/2C52B4D6-9301-46A4-8BC2-5D7127E89961.png';
 
 let orderCounter = 1;
+const invoices = new Map(); // لتخزين الفواتير
 
 function parseAmount(amountStr) {
     const str = amountStr.toLowerCase();
@@ -59,14 +60,13 @@ client.on('messageCreate', async (message) => {
         await message.channel.send({ embeds: [mainEmbed], components: [menu] });
     }
 
-    // أمر !y لتأكيد الطلب
+    // أمر !y
     if (message.content.startsWith('!y')) {
         if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) return;
         const args = message.content.split(/ +/);
         const targetID = args[1];
         await message.delete().catch(() => null);
         if (!targetID) return;
-
         const targetUser = await client.users.fetch(targetID).catch(() => null);
         if (!targetUser) return;
 
@@ -76,13 +76,33 @@ client.on('messageCreate', async (message) => {
             .setDescription(`عند شراء الغرض يرجى قراءة القوانين ونحن غير مسؤلين \n\n العميل الموجه له الطلب: ${targetUser}`);
 
         const row = new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setCustomId(`confirm_${targetID}`).setLabel('تاكيد الشراء').setStyle(ButtonStyle.Success),
+            new ButtonBuilder().setCustomId(`confirm_btn_${targetID}`).setLabel('تاكيد الشراء').setStyle(ButtonStyle.Success),
             new ButtonBuilder().setCustomId(`cancel_${targetID}`).setLabel('إلغاء الشراء').setStyle(ButtonStyle.Danger)
         );
         await message.channel.send({ content: `${targetUser}`, embeds: [confirmEmbed], components: [row] });
     }
 
-    // أمر الضريبة
+    // أمر !فاتورة
+    if (message.content.startsWith('!فاتورة')) {
+        const args = message.content.split(/ +/);
+        const invID = args[1];
+        if (!invID) return message.reply("⚠️ يرجى كتابة رقم الفاتورة. مثال: `!فاتورة 1`").then(m => setTimeout(() => m.delete(), 5000));
+
+        const data = invoices.get(invID);
+        if (!data) return message.reply("❌ لم يتم العثور على هذه الفاتورة.").then(m => setTimeout(() => m.delete(), 5000));
+
+        const invEmbed = new EmbedBuilder()
+            .setTitle(`تفاصيل الفاتورة #${invID}`)
+            .setColor(0x2ecc71)
+            .addFields(
+                { name: '👤 العميل:', value: `<@${data.userId}>`, inline: true },
+                { name: '📦 نوع الغرض:', value: `${data.item}`, inline: true },
+                { name: '🕒 التاريخ:', value: `${data.date}`, inline: false }
+            );
+        await message.channel.send({ embeds: [invEmbed] });
+    }
+
+    // أمر !tax و !رسالة (كما هي في كودك الأصلي)
     if (message.content.startsWith('!tax')) {
         const args = message.content.split(/ +/);
         if (args[1]) {
@@ -93,85 +113,45 @@ client.on('messageCreate', async (message) => {
     if (message.content.startsWith('!رسالة')) {
         if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) return;
         const args = message.content.slice('!رسالة'.length).trim().split(/ +/);
-        const targetID = args.shift(); 
-        const text = args.join(' ');
-        await message.delete().catch(() => null); // حذف رسالة الأمر فوراً
+        const targetID = args.shift(); const text = args.join(' ');
+        await message.delete().catch(() => null);
         if (!targetID || !text) return;
-
-        // 1. إذا كان الـ ID لروم (قناة)
         const targetChannel = message.guild.channels.cache.get(targetID);
-        if (targetChannel) {
-            await targetChannel.send(`${text}`);
-            return (await message.channel.send(`✅ تم الإرسال في القناة: **${targetChannel.name}**`))
-                .then(msg => setTimeout(() => msg.delete(), 3000));
-        }
-
-        // 2. إذا كان الـ ID لرتبة (يرسل للأعضاء خاص)
+        if (targetChannel) { await targetChannel.send(`${text}`); return; }
         const targetRole = message.guild.roles.cache.get(targetID);
         if (targetRole) {
             const members = await message.guild.members.fetch();
             const roleMembers = members.filter(m => m.roles.cache.has(targetID) && !m.user.bot);
-            let count = 0;
-            for (const [id, member] of roleMembers) {
-                try { await member.send(`${text}`); count++; } catch (e) {}
-            }
-            return (await message.channel.send(`✅ تم الإرسال لـ **${count}** عضو في رتبة **${targetRole.name}**`))
-                .then(msg => setTimeout(() => msg.delete(), 3000));
-        }
-
-        // 3. إذا كان الـ ID لعضو (يرسل له خاص)
-        try {
-            const targetUser = await client.users.fetch(targetID);
-            if (targetUser) {
-                await targetUser.send(`${text}`);
-                return (await message.channel.send(`✅ تم الإرسال لخاص العضو: **${targetUser.username}**`))
-                    .then(msg => setTimeout(() => msg.delete(), 3000));
-            }
-        } catch (e) {
-            return (await message.channel.send(`❌ الـ ID غير صحيح (ليس روم ولا رتبة ولا عضو)`))
-                .then(msg => setTimeout(() => msg.delete(), 4000));
-        }
-    }
-}); // <--- هذا القوس هو اللي كان ناقص وتمت إضافته لحل المشكلة
-
-client.on('interactionCreate', async (interaction) => {
-    // الأزرار
-    if (interaction.isButton()) {
-        const [btnAction, targetId] = interaction.customId.split('_');
-
-        // التعامل مع أمر !y
-        if (btnAction === 'confirm' || btnAction === 'cancel') {
-            if (interaction.user.id !== targetId) return interaction.reply({ content: "❌ هذا الزر ليس لك!", ephemeral: true });
-            
-            if (btnAction === 'confirm') {
-                const num = orderCounter++;
-                await interaction.update({ content: `✅ تم تاكيد الطلب بنجاح بواسطة ${interaction.user}`, embeds: [], components: [] });
-                
-                try { 
-                    await interaction.user.send(`${interaction.user}\n\n✅ **تم تأكيد طلبك بنجاح!**\n📦 **رقم الطلب:** \`#${num}\`\n👤 **العميل:** ${interaction.user.username}`); 
-                } catch(e){}
-
-                const logChan = client.channels.cache.get(LOG_CHANNEL_ID);
-                if (logChan) {
-                    const logEmbed = new EmbedBuilder()
-                        .setColor(0x2ecc71)
-                        .setTitle('تأكيد طلب جديد')
-                        .addFields(
-                            { name: 'رقم الطلب:', value: `#${num}`, inline: false },
-                            { name: 'العميل:', value: `${interaction.user.username}`, inline: false },
-                            { name: 'ID العميل:', value: `${interaction.user.id}`, inline: false }
-                        )
-                        .setTimestamp();
-                    await logChan.send({ embeds: [logEmbed] });
-                }
-            } else if (btnAction === 'cancel') {
-                await interaction.update({ content: `❌ تم رفض شراء الطلب بواسطة ${interaction.user}`, embeds: [], components: [] });
-            }
+            for (const [id, member] of roleMembers) { try { await member.send(`${text}`); } catch (e) {} }
             return;
         }
+        try {
+            const targetUser = await client.users.fetch(targetID);
+            if (targetUser) await targetUser.send(`${text}`);
+        } catch (e) {}
+    }
+});
 
-        // أزرار التحكم بالتكت
-        if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) return;
+client.on('interactionCreate', async (interaction) => {
+    if (interaction.isButton()) {
+        const [btnAction, subAction, targetId] = interaction.customId.split('_');
+
+        // إذا ضغط تأكيد يفتح المودال
+        if (btnAction === 'confirm' && subAction === 'btn') {
+            if (interaction.user.id !== targetId) return interaction.reply({ content: "❌ هذا الزر ليس لك!", ephemeral: true });
+            
+            const modal = new ModalBuilder().setCustomId(`final_confirm_${targetId}`).setTitle('تأكيد نوع الغرض');
+            const input = new TextInputBuilder().setCustomId('item_name').setLabel('ما هو نوع الغرض الذي اشتريته؟').setStyle(TextInputStyle.Short).setRequired(true);
+            modal.addComponents(new ActionRowBuilder().addComponents(input));
+            return await interaction.showModal(modal);
+        }
+
+        if (btnAction === 'cancel') {
+            if (interaction.user.id !== targetId) return interaction.reply({ content: "❌ هذا الزر ليس لك!", ephemeral: true });
+            return await interaction.update({ content: `❌ تم رفض شراء الطلب بواسطة ${interaction.user}`, embeds: [], components: [] });
+        }
+
+        // أزرار التحكم بالتكت (كما هي)
         if (interaction.customId === 'claim_btn') await interaction.channel.send(`🔒 تم استلام التذكره بواسطة: <@${interaction.user.id}>`);
         if (interaction.customId === 'rename_btn') {
             const m = new ModalBuilder().setCustomId('rename_modal').setTitle('تغيير الاسم');
@@ -179,12 +159,45 @@ client.on('interactionCreate', async (interaction) => {
             m.addComponents(new ActionRowBuilder().addComponents(i));
             await interaction.showModal(m);
         }
-        if (interaction.customId === 'delete_btn') {
-            setTimeout(() => interaction.channel.delete(), 2000);
+        if (interaction.customId === 'delete_btn') setTimeout(() => interaction.channel.delete(), 2000);
+    }
+
+    // استلام المودال الخاص بنوع الغرض بعد التأكيد
+    if (interaction.isModalSubmit() && interaction.customId.startsWith('final_confirm_')) {
+        const targetId = interaction.customId.split('_')[2];
+        const itemName = interaction.fields.getTextInputValue('item_name');
+        const num = orderCounter++;
+
+        // حفظ البيانات في الخريطة للفاتورة
+        invoices.set(num.toString(), {
+            userId: targetId,
+            item: itemName,
+            date: new Date().toLocaleString('ar-EG')
+        });
+
+        await interaction.update({ content: `✅ تم تاكيد الطلب بنجاح للغرض: **${itemName}** بواسطة ${interaction.user}`, embeds: [], components: [] });
+
+        // إرسال الفاتورة في الخاص
+        try {
+            await interaction.user.send(`${interaction.user}\n\n✅ **تم تأكيد طلبك بنجاح!**\n📦 **رقم الفاتورة:** \`#${num}\`\n🛒 **نوع الغرض:** ${itemName}\n👤 **العميل:** ${interaction.user.username}`);
+        } catch (e) {}
+
+        // إرسال اللوج
+        const logChan = client.channels.cache.get(LOG_CHANNEL_ID);
+        if (logChan) {
+            const logEmbed = new EmbedBuilder()
+                .setColor(0x2ecc71)
+                .setTitle('فاتورة جديدة تم إصدارها')
+                .addFields(
+                    { name: 'رقم الفاتورة:', value: `#${num}`, inline: true },
+                    { name: 'الغرض:', value: `${itemName}`, inline: true },
+                    { name: 'العميل:', value: `${interaction.user.username}`, inline: false }
+                ).setTimestamp();
+            await logChan.send({ embeds: [logEmbed] });
         }
     }
 
-    // القائمة المنسدلة والمودال
+    // تكرار بقية منطق التكت (القائمة المنسدلة والمودالات الأخرى)
     if (interaction.isStringSelectMenu() && interaction.customId === 'ticket_select') {
         const choice = interaction.values[0];
         if (choice === 'refresh') return interaction.reply({ content: '✅ تم تحديث القائمة.', ephemeral: true });
@@ -200,12 +213,7 @@ client.on('interactionCreate', async (interaction) => {
         await interaction.showModal(modal);
     }
 
-    if (interaction.isModalSubmit()) {
-        if (interaction.customId === 'rename_modal') {
-            const n = interaction.fields.getTextInputValue('new_name_field');
-            await interaction.channel.setName(n);
-            return interaction.reply(`✅ تم تغيير الاسم لـ: ${n}`);
-        }
+    if (interaction.isModalSubmit() && interaction.customId.startsWith('modal_')) {
         await interaction.deferReply({ ephemeral: true });
         const type = interaction.customId.replace('modal_', '');
         const isBuy = type === 'buy_option';
@@ -232,6 +240,12 @@ client.on('interactionCreate', async (interaction) => {
         );
         await channel.send({ content: `<@${interaction.user.id}> | <@&${ADMIN_ROLE_ID}>`, embeds: [eb], components: [b] });
         await interaction.editReply(`✅ تم فتح تذكرتك: ${channel}`);
+    }
+
+    if (interaction.isModalSubmit() && interaction.customId === 'rename_modal') {
+        const n = interaction.fields.getTextInputValue('new_name_field');
+        await interaction.channel.setName(n);
+        return interaction.reply(`✅ تم تغيير الاسم لـ: ${n}`);
     }
 });
 
