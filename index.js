@@ -37,6 +37,7 @@ client.once('ready', () => console.log(`✅ ${client.user.tag} متصل وجاه
 client.on('messageCreate', async (message) => {
     if (message.author.bot || !message.guild) return;
 
+    // --- أمر !تكت ---
     if (message.content === '!تكت') {
         if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) return;
         const mainEmbed = new EmbedBuilder()
@@ -58,27 +59,35 @@ client.on('messageCreate', async (message) => {
         await message.channel.send({ embeds: [mainEmbed], components: [menu] });
     }
 
+    // --- أمر تأكيد طلب !y (مصحح) ---
     if (message.content.startsWith('!y')) {
         if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) return;
+        
         const args = message.content.split(/ +/);
         const targetID = args[1];
-        if (!targetID) return message.reply("⚠️ يرجى وضع ID الشخص");
+        
+        // حذف رسالة الأمر فوراً
+        await message.delete().catch(() => null);
+
+        if (!targetID) return; 
 
         const targetUser = await client.users.fetch(targetID).catch(() => null);
-        if (!targetUser) return message.reply("❌ عضو غير موجود");
+        if (!targetUser) return;
 
         const confirmEmbed = new EmbedBuilder()
             .setColor(0x808080)
-            .setTitle('قائمة فيه')
+            .setTitle('قائمة الشراء')
             .setDescription(`عند شراء الغرض يرجى قراءة القوانين ونحن غير مسؤلين \n\n العميل الموجه له الطلب: ${targetUser}`);
 
         const row = new ActionRowBuilder().addComponents(
             new ButtonBuilder().setCustomId(`confirm_${targetID}`).setLabel('تاكيد الشراء').setStyle(ButtonStyle.Success),
             new ButtonBuilder().setCustomId(`cancel_${targetID}`).setLabel('إلغاء الشراء').setStyle(ButtonStyle.Danger)
         );
+
         await message.channel.send({ content: `${targetUser}`, embeds: [confirmEmbed], components: [row] });
     }
 
+    // --- أمر الضريبة !tax ---
     if (message.content.startsWith('!tax')) {
         const args = message.content.split(/ +/);
         if (args[1]) {
@@ -87,6 +96,7 @@ client.on('messageCreate', async (message) => {
         }
     }
 
+    // --- أمر !رسالة ---
     if (message.content.startsWith('!رسالة')) {
         if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) return;
         const args = message.content.slice('!رسالة'.length).trim().split(/ +/);
@@ -105,6 +115,7 @@ client.on('messageCreate', async (message) => {
 });
 
 client.on('interactionCreate', async (interaction) => {
+    // التعامل مع التذاكر (Select Menu)
     if (interaction.isStringSelectMenu() && interaction.customId === 'ticket_select') {
         const choice = interaction.values[0];
         if (choice === 'refresh') return interaction.reply({ content: '✅ تم تحديث القائمة.', ephemeral: true });
@@ -121,6 +132,7 @@ client.on('interactionCreate', async (interaction) => {
         await interaction.showModal(modal);
     }
 
+    // التعامل مع المودال (Submit)
     if (interaction.isModalSubmit()) {
         if (interaction.customId === 'rename_modal') {
             const n = interaction.fields.getTextInputValue('new_name_field');
@@ -132,7 +144,6 @@ client.on('interactionCreate', async (interaction) => {
         const type = interaction.customId.replace('modal_', '');
         const isBuy = type === 'buy_option';
         
-        // تحديد الكتاقوري بناءً على نوع التذكرة
         const targetParent = isBuy ? BUY_CATEGORY_ID : SUPPORT_CATEGORY_ID;
 
         const channel = await interaction.guild.channels.create({
@@ -163,23 +174,36 @@ client.on('interactionCreate', async (interaction) => {
         await interaction.editReply(`✅ تم فتح تذكرتك: ${channel}`);
     }
 
+    // التعامل مع الأزرار (Buttons)
     if (interaction.isButton()) {
         const [btnAction, targetId] = interaction.customId.split('_');
 
+        // أزرار أمر !y
         if (btnAction === 'confirm' || btnAction === 'cancel') {
             if (interaction.user.id !== targetId) return interaction.reply({ content: "❌ هذا الزر ليس لك!", ephemeral: true });
+            
             if (btnAction === 'confirm') {
                 const num = orderCounter++;
                 await interaction.update({ content: `✅ تم تاكيد الطلب بنجاح بواسطة ${interaction.user}`, embeds: [], components: [] });
-                try { await interaction.user.send(`${interaction.user} \n\n تم تاكيد طلب رقم الطلب | ${num} \n اسم العميل | ${interaction.user.username}`); } catch(e){}
+                
+                try { 
+                    await interaction.user.send(
+                        `✅ **تم تأكيد طلبك بنجاح!**\n` +
+                        `📦 **رقم الطلب:** #${num}\n` +
+                        `👤 **العميل:** ${interaction.user.username}`
+                    ); 
+                } catch(e){}
+
                 const log = client.channels.cache.get(LOG_CHANNEL_ID);
-                if (log) log.send(`✅ تم التأكيد | رقم الطلب: ${num} | العميل: ${interaction.user.tag}`);
-            } else {
-                await interaction.update({ content: `❌ تم رفض شراء الطلب`, embeds: [], components: [] });
+                if (log) log.send(`✅ تم التأكيد | رقم الطلب: #${num} | العميل: ${interaction.user.tag}`);
+            
+            } else if (btnAction === 'cancel') {
+                await interaction.update({ content: `❌ تم رفض شراء الطلب بواسطة ${interaction.user}`, embeds: [], components: [] });
             }
             return;
         }
 
+        // أزرار التذكرة (للمشرفين)
         if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) return interaction.reply({ content: 'للإدارة فقط!', ephemeral: true });
 
         if (interaction.customId === 'claim_btn') await interaction.channel.send(`🔒 تم استلام التذكره بواسطة: <@${interaction.user.id}>`);
@@ -197,6 +221,6 @@ client.on('interactionCreate', async (interaction) => {
     }
 });
 
-
 // استدعاء التوكن من السكرت (Secrets)
 client.login(process.env.TOKEN); 
+
