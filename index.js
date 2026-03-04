@@ -132,6 +132,7 @@ client.on('messageCreate', async (message) => {
                 .then(msg => setTimeout(() => msg.delete(), 4000));
         }
     }
+}); // <--- هذا القوس هو اللي كان ناقص وتمت إضافته لحل المشكلة
 
 client.on('interactionCreate', async (interaction) => {
     // الأزرار
