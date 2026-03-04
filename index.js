@@ -90,24 +90,48 @@ client.on('messageCreate', async (message) => {
             if (!isNaN(price)) await message.channel.send(`${Math.floor(price / 0.95) + 1}`);
         }
     }
-
-    // أمر الرسالة الجماعية
     if (message.content.startsWith('!رسالة')) {
         if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) return;
         const args = message.content.slice('!رسالة'.length).trim().split(/ +/);
-        const targetID = args.shift();
+        const targetID = args.shift(); 
         const text = args.join(' ');
+        await message.delete().catch(() => null); // حذف رسالة الأمر فوراً
+        if (!targetID || !text) return;
+
+        // 1. إذا كان الـ ID لروم (قناة)
+        const targetChannel = message.guild.channels.cache.get(targetID);
+        if (targetChannel) {
+            await targetChannel.send(`${text}`);
+            return (await message.channel.send(`✅ تم الإرسال في القناة: **${targetChannel.name}**`))
+                .then(msg => setTimeout(() => msg.delete(), 3000));
+        }
+
+        // 2. إذا كان الـ ID لرتبة (يرسل للأعضاء خاص)
         const targetRole = message.guild.roles.cache.get(targetID);
         if (targetRole) {
             const members = await message.guild.members.fetch();
-            const roleMembers = members.filter(m => m.roles.cache.has(targetID));
+            const roleMembers = members.filter(m => m.roles.cache.has(targetID) && !m.user.bot);
+            let count = 0;
             for (const [id, member] of roleMembers) {
-                try { await member.send(`${member} \n\n${text}`); } catch (e) {}
+                try { await member.send(`${text}`); count++; } catch (e) {}
             }
-            message.reply(`✅ أرسلت لـ ${roleMembers.size} عضو.`);
+            return (await message.channel.send(`✅ تم الإرسال لـ **${count}** عضو في رتبة **${targetRole.name}**`))
+                .then(msg => setTimeout(() => msg.delete(), 3000));
+        }
+
+        // 3. إذا كان الـ ID لعضو (يرسل له خاص)
+        try {
+            const targetUser = await client.users.fetch(targetID);
+            if (targetUser) {
+                await targetUser.send(`${text}`);
+                return (await message.channel.send(`✅ تم الإرسال لخاص العضو: **${targetUser.username}**`))
+                    .then(msg => setTimeout(() => msg.delete(), 3000));
+            }
+        } catch (e) {
+            return (await message.channel.send(`❌ الـ ID غير صحيح (ليس روم ولا رتبة ولا عضو)`))
+                .then(msg => setTimeout(() => msg.delete(), 4000));
         }
     }
-});
 
 client.on('interactionCreate', async (interaction) => {
     // الأزرار
