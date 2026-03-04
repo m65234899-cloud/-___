@@ -150,4 +150,6 @@ client.on('interactionCreate', async (interaction) => {
     }
 });
 
-client.login(TOKEN);
+// استدعاء التوكن من السكرت (Secrets)
+client.login(process.env.TOKEN); 
+
