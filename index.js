@@ -113,7 +113,7 @@ client.on('messageCreate', async (message) => {
         const purchaseEmbed = new EmbedBuilder()
             .setColor(0x808080)
             .setTitle('تأكيد عملية الشراء')
-            .setDescription(`عزيزي العميل ${targetUser}، يرجى الضغط على الزر أدناه لتأكيد عملية الشراء الخاصة بك.`);
+            .setDescription(`عزيزي العميل ${targetUser}'يرجى الضغط على الزر أدناه لتأكيد عملية الشراء الخاصة بك عند ضغطك على زر تاميد يرجى قراءة الفوانين.`);
 
         const actionButtons = new ActionRowBuilder().addComponents(
             new ButtonBuilder().setCustomId(`y_confirm_${targetID}`).setLabel('تأكيد وإتمام الشراء').setStyle(ButtonStyle.Success),
@@ -150,8 +150,8 @@ client.on('interactionCreate', async (interaction) => {
 
         const modal = new ModalBuilder().setCustomId(`t_modal_${choice}`).setTitle('بيانات التذكرة');
         if (choice === 'buy_option') {
-            const q1 = new TextInputBuilder().setCustomId('q1').setLabel('ما هو طلبك؟').setStyle(TextInputStyle.Short).setRequired(true);
-            const q2 = new TextInputBuilder().setCustomId('q2').setLabel('طريقة الدفع؟').setStyle(TextInputStyle.Short).setRequired(true);
+            const q1 = new TextInputBuilder().setCustomId('q1').setLabel('نوع الغرض ؟').setStyle(TextInputStyle.Short).setRequired(true);
+            const q2 = new TextInputBuilder().setCustomId('q2').setLabel('طريقة الدفع الخاصه بك ؟').setStyle(TextInputStyle.Short).setRequired(true);
             modal.addComponents(new ActionRowBuilder().addComponents(q1), new ActionRowBuilder().addComponents(q2));
         } else {
             const q3 = new TextInputBuilder().setCustomId('q3').setLabel('وصف المشكلة').setStyle(TextInputStyle.Paragraph).setRequired(true);
@@ -235,13 +235,13 @@ client.on('interactionCreate', async (interaction) => {
             const ticketEmbed = new EmbedBuilder()
                 .setTitle('Twins Store Support Ticket')
                 .setColor(0x2f3136)
-                .setDescription(`يرجى انتظار الدعم الفني لتلقي استفسارك\n\n**${isBuy ? 'ما هو طلبك؟' : 'وصف المشكلة:'}**\n${val1}\n\n${isBuy ? `**طريقة دفعك**\n${val2}` : ''}`)
+                .setDescription(`يرجى انتظار الدعم الفني لتلقي استفسارك\n\n**${isBuy ? 'ما نوع الغرض ؟ ' : 'وصف المشكلة:'}**\n${val1}\n\n${isBuy ? `**طريقة الدفع الخاصه بك ؟**\n${val2}` : ''}`)
                 .setFooter({ text: `تذكرة العميل: ${interaction.user.tag}` });
 
             const r1 = new ActionRowBuilder().addComponents(
-                new ButtonBuilder().setCustomId('claim_btn').setLabel('استلام').setStyle(ButtonStyle.Success),
+                new ButtonBuilder().setCustomId('claim_btn').setLabel(' استلام التذكرة').setStyle(ButtonStyle.Success),
                 new ButtonBuilder().setCustomId('rename_btn').setLabel('تغيير الاسم').setStyle(ButtonStyle.Primary),
-                new ButtonBuilder().setCustomId('delete_btn').setLabel('إغلاق').setStyle(ButtonStyle.Danger)
+                new ButtonBuilder().setCustomId('delete_btn').setLabel('إغلاق التذكرة').setStyle(ButtonStyle.Danger)
             );
             const r2 = new ActionRowBuilder().addComponents(
                 new ButtonBuilder().setCustomId('remind_btn').setLabel('تذكير العضو (خاص)').setStyle(ButtonStyle.Secondary)
@@ -275,7 +275,7 @@ client.on('interactionCreate', async (interaction) => {
                 if (customer) {
                     try { 
                         await customer.send(`🔔 يرجى الرد على تذكرتك: ${channel}`); 
-                        await channel.send(`✅ تم التنبيه خاص.`); 
+                        await channel.send(`تم التنبيه للعضو عبر الخاص ☑️.`); 
                     } catch { 
                         await channel.send(`❌ الخاص مقفل، رد هنا <@${customerId}>`); 
                     }
