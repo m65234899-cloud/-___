@@ -75,6 +75,55 @@ client.on('messageCreate', async (message) => {
 
         await message.channel.send({ embeds: [invEmbed] });
     }
+// --- [ أمر !رسالة الخاص بمتجر VAULTA - روم أو رتبة خاص ] ---
+
+if (message.content.startsWith('!رسالة')) {
+    if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) return;
+
+    const args = message.content.split(' ');
+    const id = args[1]; // آيدي الروم أو آيدي الرتبة
+    const msgText = args.slice(2).join(' '); // نص الرسالة
+
+    if (!id || !msgText) {
+        return message.reply("**⚠️ الاستخدام: `!رسالة [ID روم أو رتبة] [الرسالة]`**");
+    }
+
+    const targetChannel = message.guild.channels.cache.get(id);
+    const targetRole = message.guild.roles.cache.get(id);
+
+    const messageEmbed = new EmbedBuilder()
+        .setAuthor({ name: 'إدارة VAULTA', iconURL: message.guild.iconURL() })
+        .setDescription(msgText)
+        .setColor(0x2f3136)
+        .setTimestamp();
+
+    if (targetChannel) {
+        // إذا كان آيدي روم -> يرسل في الروم
+        targetChannel.send({ embeds: [messageEmbed] }).then(() => {
+            message.reply(`**✅ تم إرسال الرسالة في روم <#${id}> بنجاح**`);
+        }).catch(() => message.reply("**❌ فشل الإرسال للروم**"));
+
+    } else if (targetRole) {
+        // إذا كان آيدي رتبة -> يرسل لكل الأعضاء اللي عندهم الرتبة في الخاص
+        const membersWithRole = targetRole.members;
+        if (membersWithRole.size === 0) return message.reply("**❌ هذي الرتبة ما فيها أعضاء**");
+
+        message.reply(`**⏳ جاري إرسال الرسالة إلى ${membersWithRole.size} عضو في الخاص...**`);
+
+        let successCount = 0;
+        membersWithRole.forEach(async (member) => {
+            try {
+                await member.send({ content: `<@${member.id}>`, embeds: [messageEmbed] });
+                successCount++;
+            } catch (e) {
+                console.log(`فشل الإرسال للعضو: ${member.user.tag}`);
+            }
+        });
+        // ملاحظة: الـ successCount قد لا يظهر دقيق فوراً بسبب سرعة الـ Loop، لكن الإرسال شغال
+    } else {
+        message.reply("**❌ الآيدي غير صحيح (ليس روم ولا رتبة)**");
+    }
+}
 
     // --- أمر إنشاء التكت الرئيسي ---
     if (message.content === '!تكت') {
