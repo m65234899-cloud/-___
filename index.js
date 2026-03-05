@@ -282,7 +282,7 @@ client.on('interactionCreate', async (interaction) => {
             const val2 = isBuy ? interaction.fields.getTextInputValue('q2') : null;
 
             const ticketEmbed = new EmbedBuilder()
-                .setTitle('Twins Store Support Ticket')
+                .setTitle('VAULTA SHOP Support Ticket')
                 .setColor(0x2f3136)
                 .setDescription(`يرجى انتظار الدعم الفني لتلقي استفسارك\n\n**${isBuy ? 'ما نوع الغرض ؟ ' : 'وصف المشكلة:'}**\n${val1}\n\n${isBuy ? `**طريقة الدفع الخاصه بك ؟**\n${val2}` : ''}`)
                 .setFooter({ text: `تذكرة العميل: ${interaction.user.tag}` });
