@@ -81,11 +81,11 @@ client.on('messageCreate', async (message) => {
         if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) return;
         
         const ticketEmbed = new EmbedBuilder()
-            .setTitle('مركز المساعدة والطلبات')
-            .setDescription('مرحباً بك في المركز الخاص بنا، يرجى اختيار القسم المناسب لمشكلتك أو طلبك من القائمة المنسدلة في الأسفل.')
+            .setTitle('VAULTA SYSTEM')
+            .setDescription('افتح تذكرتك من هنا حسب المشكلة')
             .setColor(0x808080)
             .setImage(MAIN_IMAGE)
-            .setFooter({ text: 'Twins Store' });
+            .setFooter({ text: 'VAULTA Store' });
 
         const selectionMenu = new ActionRowBuilder().addComponents(
             new StringSelectMenuBuilder()
