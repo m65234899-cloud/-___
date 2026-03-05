@@ -278,20 +278,50 @@ client.on('interactionCreate', async (interaction) => {
             .setColor(0x808080)
             .setTitle(`تذكرة جديدة - قسم ${isBuy ? 'المبيعات' : 'الدعم'}`)
             .setDescription(isBuy ? 
-                `**المنتج المطلوب:** ${interaction.fields.getTextInputValue('item_field')}\n**طريقة الدفع:** ${interaction.fields.getTextInputValue('pay_field')}` : 
-                `**وصف المشكلة:** ${interaction.fields.getTextInputValue('issue_field')}`)
+                `**ما نوع الغرض ؟:**\n\n** طريقة الدفع الخاصه بك ؟:**` : 
+                `**ماهي نوع المشكلة او الاستسفار ؟:**`)
             .setFooter({ text: `تذكرة العميل: ${interaction.user.tag}` });
 
+        // --- إضافة المستطيلات (Buttons) بناءً على طلبك ---
+        const ticketComponents = [];
+        
+        if (isBuy) {
+            const itemVal = interaction.fields.getTextInputValue('item_field');
+            const payVal = interaction.fields.getTextInputValue('pay_field');
+            
+            // مستطيل المنتج
+            ticketComponents.push(new ActionRowBuilder().addComponents(
+                new ButtonBuilder().setCustomId('field_item').setLabel(itemVal).setStyle(ButtonStyle.Secondary).setDisabled(true)
+            ));
+            // مستطيل الدفع
+            ticketComponents.push(new ActionRowBuilder().addComponents(
+                new ButtonBuilder().setCustomId('field_pay').setLabel(payVal).setStyle(ButtonStyle.Secondary).setDisabled(true)
+            ));
+        } else {
+            const issueVal = interaction.fields.getTextInputValue('issue_field');
+            // مستطيل المشكلة
+            ticketComponents.push(new ActionRowBuilder().addComponents(
+                new ButtonBuilder().setCustomId('field_issue').setLabel(issueVal).setStyle(ButtonStyle.Secondary).setDisabled(true)
+            ));
+        }
+
+        // أزرار التحكم بالإدارة
         const staffButtons = new ActionRowBuilder().addComponents(
             new ButtonBuilder().setCustomId('claim_btn').setLabel('استلام التذكرة').setStyle(ButtonStyle.Success),
             new ButtonBuilder().setCustomId('rename_btn').setLabel('تغيير الاسم').setStyle(ButtonStyle.Primary),
             new ButtonBuilder().setCustomId('delete_btn').setLabel('إغلاق التذكرة').setStyle(ButtonStyle.Danger)
         );
+        
+        ticketComponents.push(staffButtons);
 
-        await ticketChannel.send({ content: `<@${interaction.user.id}> | <@&${ADMIN_ROLE_ID}>`, embeds: [staffEmbed], components: [staffButtons] });
+        await ticketChannel.send({ 
+            content: `<@${interaction.user.id}> | <@&${ADMIN_ROLE_ID}>`, 
+            embeds: [staffEmbed], 
+            components: ticketComponents 
+        });
+        
         await interaction.editReply({ content: `✅ تم إنشاء تذكرتك بنجاح، يمكنك التوجه إليها هنا: ${ticketChannel}` });
     }
 });
-
 
 client.login(process.env.TOKEN);
