@@ -113,7 +113,7 @@ client.on('messageCreate', async (message) => {
         const purchaseEmbed = new EmbedBuilder()
             .setColor(0x808080)
             .setTitle('تأكيد عملية الشراء')
-            .setDescription(`عزيزي العميل ${targetUser}'يرجى الضغط على الزر أدناه لتأكيد عملية الشراء الخاصة بك عند ضغطك على زر تاميد يرجى قراءة الفوانين.`);
+            .setDescription(`عزيزي العميل ${targetUser}'يرجى الضغط على الزر أدناه لتأكيد عملية الشراء الخاصة بك عند ضغطك على زر تاكيد يرجى قراءة الفوانين.`);
 
         const actionButtons = new ActionRowBuilder().addComponents(
             new ButtonBuilder().setCustomId(`y_confirm_${targetID}`).setLabel('تأكيد وإتمام الشراء').setStyle(ButtonStyle.Success),
