@@ -276,51 +276,45 @@ client.on('interactionCreate', async (interaction) => {
 
         const staffEmbed = new EmbedBuilder()
             .setColor(0x808080)
-            .setTitle(`تذكرة جديدة - قسم ${isBuy ? 'المبيعات' : 'الدعم'}`)
-            .setDescription(isBuy ? 
-                `**ما نوع الغرض ؟:**\n\n** طريقة الدفع الخاصه بك ؟:**` : 
-                `**ماهي نوع المشكلة او الاستسفار ؟:**`)
+            .setTitle(`Twins Store Support Ticket`)
+            .setDescription(`يرجى انتظار الدعم الفني لتلقي استفسارك\n\n${isBuy ? '**ما هو طلبك؟**' : '**وصف المشكلة:**'}`)
             .setFooter({ text: `تذكرة العميل: ${interaction.user.tag}` });
 
-        // --- إضافة المستطيلات (Buttons) بناءً على طلبك ---
-        const ticketComponents = [];
+        // --- إضافة المستطيلات العريضة المطابقة للصورة ---
+        const rows = [];
         
         if (isBuy) {
             const itemVal = interaction.fields.getTextInputValue('item_field');
             const payVal = interaction.fields.getTextInputValue('pay_field');
             
-            // مستطيل المنتج
-            ticketComponents.push(new ActionRowBuilder().addComponents(
-                new ButtonBuilder().setCustomId('field_item').setLabel(itemVal).setStyle(ButtonStyle.Secondary).setDisabled(true)
+            // مستطيل "ما هو طلبك؟"
+            rows.push(new ActionRowBuilder().addComponents(
+                new ButtonBuilder().setCustomId('f_item').setLabel(itemVal).setStyle(ButtonStyle.Secondary).setDisabled(true)
             ));
-            // مستطيل الدفع
-            ticketComponents.push(new ActionRowBuilder().addComponents(
-                new ButtonBuilder().setCustomId('field_pay').setLabel(payVal).setStyle(ButtonStyle.Secondary).setDisabled(true)
+            
+            staffEmbed.setDescription(staffEmbed.data.description + `\n\n**طريقة دفعك**`);
+            
+            // مستطيل "طريقة دفعك"
+            rows.push(new ActionRowBuilder().addComponents(
+                new ButtonBuilder().setCustomId('f_pay').setLabel(payVal).setStyle(ButtonStyle.Secondary).setDisabled(true)
             ));
         } else {
             const issueVal = interaction.fields.getTextInputValue('issue_field');
-            // مستطيل المشكلة
-            ticketComponents.push(new ActionRowBuilder().addComponents(
-                new ButtonBuilder().setCustomId('field_issue').setLabel(issueVal).setStyle(ButtonStyle.Secondary).setDisabled(true)
+            rows.push(new ActionRowBuilder().addComponents(
+                new ButtonBuilder().setCustomId('f_issue').setLabel(issueVal).setStyle(ButtonStyle.Secondary).setDisabled(true)
             ));
         }
 
-        // أزرار التحكم بالإدارة
+        // أزرار التحكم
         const staffButtons = new ActionRowBuilder().addComponents(
             new ButtonBuilder().setCustomId('claim_btn').setLabel('استلام التذكرة').setStyle(ButtonStyle.Success),
             new ButtonBuilder().setCustomId('rename_btn').setLabel('تغيير الاسم').setStyle(ButtonStyle.Primary),
             new ButtonBuilder().setCustomId('delete_btn').setLabel('إغلاق التذكرة').setStyle(ButtonStyle.Danger)
         );
-        
-        ticketComponents.push(staffButtons);
+        rows.push(staffButtons);
 
-        await ticketChannel.send({ 
-            content: `<@${interaction.user.id}> | <@&${ADMIN_ROLE_ID}>`, 
-            embeds: [staffEmbed], 
-            components: ticketComponents 
-        });
-        
-        await interaction.editReply({ content: `✅ تم إنشاء تذكرتك بنجاح، يمكنك التوجه إليها هنا: ${ticketChannel}` });
+        await ticketChannel.send({ content: `<@${interaction.user.id}> | <@&${ADMIN_ROLE_ID}>`, embeds: [staffEmbed], components: rows });
+        await interaction.editReply({ content: `✅ تم إنشاء تذكرتك بنجاح: ${ticketChannel}` });
     }
 });
 
