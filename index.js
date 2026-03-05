@@ -1,8 +1,16 @@
 const { 
-    Client, GatewayIntentBits, EmbedBuilder, ActionRowBuilder, 
-    StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, 
-    ChannelType, PermissionFlagsBits, ModalBuilder, 
-    TextInputBuilder, TextInputStyle 
+    Client, 
+    GatewayIntentBits, 
+    EmbedBuilder, 
+    ActionRowBuilder, 
+    StringSelectMenuBuilder, 
+    ButtonBuilder, 
+    ButtonStyle, 
+    ChannelType, 
+    PermissionFlagsBits, 
+    ModalBuilder, 
+    TextInputBuilder, 
+    TextInputStyle 
 } = require('discord.js');
 
 const client = new Client({
@@ -14,24 +22,41 @@ const client = new Client({
     ]
 });
 
-// --- الإعدادات الكاملة ---
+// --- [ الإعدادات الكاملة والقيم الثابتة ] ---
+
 const TOKEN = process.env.TOKEN; 
+
 const ADMIN_ROLE_ID = '1472225010134421676';
+
 const LOG_CHANNEL_ID = '1473378884857630821';
+
 const BUY_CATEGORY_ID = '1478604299549544601'; 
+
 const SUPPORT_CATEGORY_ID = '1477992348033093683'; 
+
 const MAIN_IMAGE = 'https://cdn.discordapp.com/attachments/1473378884857630821/1477532261963403284/2C52B4D6-9301-46A4-8BC2-5D7127E89961.png';
 
 let orderCounter = 1;
+
 const invoices = new Map(); // قاعدة بيانات مؤقتة للفواتير
+
+// --- [ الدوال المساعدة للنظام ] ---
 
 function parseAmount(amountStr) {
     const str = amountStr.toLowerCase();
-    const multipliers = { 'k': 1000, 'm': 1000000, 'b': 1000000000 };
+    const multipliers = { 
+        'k': 1000, 
+        'm': 1000000, 
+        'b': 1000000000 
+    };
     const lastChar = str[str.length - 1];
-    if (multipliers[lastChar]) return parseInt(parseFloat(str.slice(0, -1)) * multipliers[lastChar]);
+    if (multipliers[lastChar]) {
+        return parseInt(parseFloat(str.slice(0, -1)) * multipliers[lastChar]);
+    }
     return parseInt(str);
 }
+
+// --- [ أحداث تشغيل البوت ] ---
 
 client.once('ready', () => {
     console.log(`✅ تم تشغيل البوت بنجاح: ${client.user.tag}`);
@@ -40,7 +65,7 @@ client.once('ready', () => {
 client.on('messageCreate', async (message) => {
     if (message.author.bot || !message.guild) return;
 
-    // --- أمر إنشاء قائمة التذاكر ---
+    // --- أمر إنشاء قائمة التذاكر الرئيسية ---
     if (message.content === '!تكت') {
         if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) return;
         
@@ -56,9 +81,9 @@ client.on('messageCreate', async (message) => {
                 .setCustomId('ticket_select')
                 .setPlaceholder('إختر نوع التذكرة التي ترغب بفتحها')
                 .addOptions([
-                    { label: 'قسم المبيعات والشراء', description: 'لطلب شراء الأغراض أو المنتجات الخاصة بنا', value: 'buy_option' },
-                    { label: 'قسم الدعم الفني', description: 'إذا واجهت مشكلة تقنية أو لديك استفسار عام', value: 'support_option' },
-                    { label: 'تحديث القائمة', description: 'تنشيط وتحديث خيارات القائمة', value: 'refresh' }
+                    { label: 'قسم المبيعات والشراء', value: 'buy_option' },
+                    { label: 'قسم الدعم الفني', value: 'support_option' },
+                    { label: 'تحديث القائمة', value: 'refresh' }
                 ])
         );
         await message.channel.send({ embeds: [ticketEmbed], components: [selectionMenu] });
@@ -69,29 +94,25 @@ client.on('messageCreate', async (message) => {
         const args = message.content.split(/ +/);
         const invoiceNumber = args[1];
         
-        if (!invoiceNumber) return message.reply("⚠️ يرجى تزويدنا برقم الفاتورة المراد البحث عنها. مثال: `!فاتورة 1`").then(m => setTimeout(() => m.delete(), 5000));
+        if (!invoiceNumber) return message.reply("⚠️ يرجى تزويدنا برقم الفاتورة.");
         
         const data = invoices.get(invoiceNumber);
-        if (!data) return message.reply("❌ عذراً، لم نتمكن من العثور على أي فاتورة مسجلة بهذا الرقم في نظامنا.").then(m => setTimeout(() => m.delete(), 5000));
+        if (!data) return message.reply("❌ لم يتم العثور على الفاتورة.");
 
         const detailedInvoiceEmbed = new EmbedBuilder()
-            .setTitle(`تفاصيل فاتورة الشراء الرقمية #${invoiceNumber}`)
+            .setTitle(`تفاصيل فاتورة الشراء #${invoiceNumber}`)
             .setColor(0x2ecc71)
-            .setThumbnail(client.user.displayAvatarURL())
             .addFields(
-                { name: '👤 اسم العميل:', value: `${data.userName}`, inline: true },
-                { name: '🆔 آيدي العميل:', value: `\`${data.userId}\``, inline: true },
-                { name: '📦 نوع الغرض المشتراة:', value: `${data.itemName}`, inline: false },
-                { name: '📅 تاريخ ووقت العملية:', value: `${data.date}`, inline: false },
-                { name: '🔢 رقم العملية التسلسلي:', value: `#${invoiceNumber}`, inline: true }
+                { name: '👤 العميل:', value: `${data.userName}`, inline: true },
+                { name: '📦 المنتج:', value: `${data.itemName}`, inline: false },
+                { name: '📅 التاريخ:', value: `${data.date}`, inline: false }
             )
-            .setFooter({ text: 'شكراً لتعاملك معنا' })
             .setTimestamp();
 
         await message.channel.send({ embeds: [detailedInvoiceEmbed] });
     }
 
-    // --- أمر توجيه طلب شراء لعميل محدد ---
+    // --- أمر توجيه طلب شراء لعضو محدد (!y) ---
     if (message.content.startsWith('!y')) {
         if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) return;
         const args = message.content.split(/ +/);
@@ -106,7 +127,7 @@ client.on('messageCreate', async (message) => {
         const purchaseEmbed = new EmbedBuilder()
             .setColor(0x808080)
             .setTitle('تأكيد عملية الشراء')
-            .setDescription(`عزيزي العميل ${targetUser}، يرجى الضغط على الزر أدناه لتأكيد عملية الشراء الخاصة بك.\n\n**تنبيه:** بضغطك على الزر أنت توافق على قوانين المتجر ونحن غير مسؤولين عن سوء الاستخدام.`);
+            .setDescription(`عزيزي العميل ${targetUser}، يرجى الضغط على الزر أدناه لتأكيد عملية الشراء الخاصة بك.`);
 
         const actionButtons = new ActionRowBuilder().addComponents(
             new ButtonBuilder().setCustomId(`open_modal_${targetID}`).setLabel('تأكيد وإتمام الشراء').setStyle(ButtonStyle.Success),
@@ -115,7 +136,7 @@ client.on('messageCreate', async (message) => {
         await message.channel.send({ content: `${targetUser}`, embeds: [purchaseEmbed], components: [actionButtons] });
     }
 
-    // --- أمر حساب الضريبة ---
+    // --- أمر حساب الضريبة (!tax) ---
     if (message.content.startsWith('!tax')) {
         const args = message.content.split(/ +/);
         if (args[1]) {
@@ -128,136 +149,29 @@ client.on('messageCreate', async (message) => {
     }
 });
 
+// --- [ التعامل مع التفاعلات (Interactions) ] ---
+
 client.on('interactionCreate', async (interaction) => {
-    // --- التعامل مع الأزرار ---
-    if (interaction.isButton()) {
-        const customId = interaction.customId;
 
-        // أزرار الشراء (حماية: للعميل الموجه له فقط)
-        if (customId.startsWith('open_modal_')) {
-            const targetId = customId.split('_')[2];
-            if (interaction.user.id !== targetId) return interaction.reply({ content: "❌ عذراً، هذا الزر مخصص فقط للعميل صاحب الطلب.", ephemeral: true });
-
-            const orderModal = new ModalBuilder().setCustomId(`submit_order_${targetId}`).setTitle('تفاصيل الغرض المشتراة');
-            const itemInput = new TextInputBuilder()
-                .setCustomId('order_item_name')
-                .setLabel('ما هو نوع الغرض الذي ترغب بشرائه؟')
-                .setPlaceholder('مثال: رتبة بريميوم، 5000 عملة، غرض خاص...')
-                .setStyle(TextInputStyle.Short)
-                .setRequired(true);
-
-            orderModal.addComponents(new ActionRowBuilder().addComponents(itemInput));
-            return await interaction.showModal(orderModal);
-        }
-
-        if (customId.startsWith('cancel_')) {
-            const targetId = customId.split('_')[1];
-            if (interaction.user.id !== targetId) return interaction.reply({ content: "❌ هذا الزر مخصص فقط للعميل صاحب الطلب.", ephemeral: true });
-            return await interaction.update({ content: `❌ تم إلغاء عملية الشراء بواسطة العميل: ${interaction.user}`, embeds: [], components: [] });
-        }
-
-        // أزرار التكت (حماية: للإدارة فقط)
-        const adminOnlyButtons = ['claim_btn', 'rename_btn', 'delete_btn'];
-        if (adminOnlyButtons.includes(customId)) {
-            if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
-                return interaction.reply({ content: "❌ عذراً، هذه الصلاحية مخصصة فقط لأعضاء فريق الإدارة.", ephemeral: true });
-            }
-
-            if (customId === 'claim_btn') {
-                await interaction.channel.send({ embeds: [new EmbedBuilder().setColor(0x2ecc71).setDescription(`🔒 تم استلام هذه التذكرة بواسطة الإداري: ${interaction.user}`)] });
-            }
-            if (customId === 'rename_btn') {
-                const renameModal = new ModalBuilder().setCustomId('rename_modal').setTitle('تعديل اسم القناة');
-                const nameInput = new TextInputBuilder().setCustomId('new_name_field').setLabel('أدخل الاسم الجديد للتذكرة').setStyle(TextInputStyle.Short).setRequired(true);
-                renameModal.addComponents(new ActionRowBuilder().addComponents(nameInput));
-                await interaction.showModal(renameModal);
-            }
-            if (customId === 'delete_btn') {
-                await interaction.reply({ content: "⚠️ جاري إغلاق وحذف التذكرة نهائياً خلال 3 ثوانٍ..." });
-                setTimeout(() => interaction.channel.delete(), 3000);
-            }
-            return;
-        }
-    }
-
-    // --- التعامل مع إرسال المودالات (Modals) ---
-    if (interaction.isModalSubmit()) {
-        // مودال تأكيد الشراء النهائي
-        if (interaction.customId.startsWith('submit_order_')) {
-            const targetId = interaction.customId.split('_')[2];
-            const itemName = interaction.fields.getTextInputValue('order_item_name');
-            const currentOrderNum = orderCounter++;
-
-            // تخزين البيانات كاملة
-            invoices.set(currentOrderNum.toString(), {
-                userId: targetId,
-                userName: interaction.user.username,
-                itemName: itemName,
-                date: new Date().toLocaleString('ar-EG', { timeZone: 'Asia/Riyadh' })
-            });
-
-            await interaction.update({ content: `✅ تم إتمام عملية الشراء بنجاح!\nالغرض: **${itemName}**\nرقم الفاتورة: **#${currentOrderNum}**`, embeds: [], components: [] });
-
-            // إرسال الفاتورة المفصلة لخاص العميل
-            try {
-                const privateInvoice = new EmbedBuilder()
-                    .setTitle('وصل شراء إلكتروني')
-                    .setColor(0x2ecc71)
-                    .setDescription(`شكراً لك على ثقتك بنا، تم تسجيل عملية الشراء بنجاح وهذه هي التفاصيل الخاصة بك:`)
-                    .addFields(
-                        { name: '📦 المنتج:', value: `${itemName}`, inline: true },
-                        { name: '🔢 رقم الفاتورة:', value: `#${currentOrderNum}`, inline: true },
-                        { name: '🕒 تاريخ العملية:', value: `${new Date().toLocaleString('ar-EG')}`, inline: false }
-                    );
-                await interaction.user.send({ embeds: [privateInvoice] });
-            } catch (error) {
-                console.log("تعذر إرسال رسالة خاصة للعميل.");
-            }
-
-            // إرسال اللوج للإدارة
-            const logChannel = client.channels.cache.get(LOG_CHANNEL_ID);
-            if (logChannel) {
-                const logEmbed = new EmbedBuilder()
-                    .setColor(0x2ecc71)
-                    .setTitle('سجل فواتير جديد')
-                    .addFields(
-                        { name: 'رقم الفاتورة:', value: `#${currentOrderNum}`, inline: true },
-                        { name: 'العميل:', value: `${interaction.user.tag}`, inline: true },
-                        { name: 'الغرض المشتراة:', value: `${itemName}`, inline: false }
-                    ).setTimestamp();
-                await logChannel.send({ embeds: [logEmbed] });
-            }
-        }
-
-        // مودال تغيير اسم التذكرة
-        if (interaction.customId === 'rename_modal') {
-            const newName = interaction.fields.getTextInputValue('new_name_field');
-            await interaction.channel.setName(newName);
-            return interaction.reply({ content: `✅ تم تغيير اسم القناة بنجاح إلى: **${newName}**` });
-        }
-    }
-
-    // --- القائمة المنسدلة للتكت ---
+    // 1. القائمة المنسدلة للتكت
     if (interaction.isStringSelectMenu() && interaction.customId === 'ticket_select') {
         const choice = interaction.values[0];
-        if (choice === 'refresh') return interaction.reply({ content: '✅ تم تحديث بيانات القائمة بنجاح.', ephemeral: true });
+        if (choice === 'refresh') return interaction.reply({ content: '✅ تم التحديث.', ephemeral: true });
 
-        const ticketModal = new ModalBuilder()
-            .setCustomId(`modal_${choice}`)
-            .setTitle(choice === 'buy_option' ? 'تفاصيل طلب الشراء' : 'تفاصيل الدعم الفني');
+        const ticketModal = new ModalBuilder().setCustomId(`modal_${choice}`).setTitle('تفاصيل التذكرة');
 
         if (choice === 'buy_option') {
-            const itemField = new TextInputBuilder().setCustomId('item_field').setLabel('ما هو الشيء الذي ترغب بشرائه؟').setStyle(TextInputStyle.Short).setRequired(true);
-            const payField = new TextInputBuilder().setCustomId('pay_field').setLabel('ما هي طريقة الدفع الخاصه بك؟').setStyle(TextInputStyle.Short).setRequired(true);
+            const itemField = new TextInputBuilder().setCustomId('item_field').setLabel('ما هو نوع الغرض؟').setStyle(TextInputStyle.Short).setRequired(true);
+            const payField = new TextInputBuilder().setCustomId('pay_field').setLabel('ما هي طريقة الدفع؟').setStyle(TextInputStyle.Short).setRequired(true);
             ticketModal.addComponents(new ActionRowBuilder().addComponents(itemField), new ActionRowBuilder().addComponents(payField));
         } else {
-            const issueField = new TextInputBuilder().setCustomId('issue_field').setLabel('يرجى وصف مشكلتك بالتفصيل').setStyle(TextInputStyle.Paragraph).setRequired(true);
+            const issueField = new TextInputBuilder().setCustomId('issue_field').setLabel('يرجى وصف مشكلتك').setStyle(TextInputStyle.Paragraph).setRequired(true);
             ticketModal.addComponents(new ActionRowBuilder().addComponents(issueField));
         }
         await interaction.showModal(ticketModal);
     }
 
-    // --- إنشاء قناة التذكرة بعد تعبئة المودال ---
+    // 2. معالجة إرسال المودال (إنشاء التذكرة بالشكل المطلوب)
     if (interaction.isModalSubmit() && interaction.customId.startsWith('modal_')) {
         await interaction.deferReply({ ephemeral: true });
         const type = interaction.customId.replace('modal_', '');
@@ -265,7 +179,6 @@ client.on('interactionCreate', async (interaction) => {
 
         const ticketChannel = await interaction.guild.channels.create({
             name: `${isBuy ? 'طلب' : 'دعم'}-${interaction.user.username}`,
-            type: ChannelType.GuildText,
             parent: isBuy ? BUY_CATEGORY_ID : SUPPORT_CATEGORY_ID,
             permissionOverwrites: [
                 { id: interaction.guild.id, deny: [PermissionFlagsBits.ViewChannel] },
@@ -274,48 +187,54 @@ client.on('interactionCreate', async (interaction) => {
             ],
         });
 
-        const staffEmbed = new EmbedBuilder()
-            .setColor(0x808080)
+        const val1 = isBuy ? interaction.fields.getTextInputValue('item_field') : interaction.fields.getTextInputValue('issue_field');
+        const val2 = isBuy ? interaction.fields.getTextInputValue('pay_field') : null;
+
+        // --- التنسيق النصي داخل الـ Embed (تطابق الصور) ---
+        const ticketEmbed = new EmbedBuilder()
+            .setColor(0x2f3136)
             .setTitle(`Twins Store Support Ticket`)
-            .setDescription(`يرجى انتظار الدعم الفني لتلقي استفسارك\n\n${isBuy ? '**ما هو طلبك؟**' : '**وصف المشكلة:**'}`)
+            .setDescription(`يرجى انتظار الدعم الفني لتلقي استفسارك\n\n**${isBuy ? 'ما هو طلبك؟' : 'وصف المشكلة:'}**\n${val1}\n\n${isBuy ? `**طريقة دفعك**\n${val2}` : ''}`)
             .setFooter({ text: `تذكرة العميل: ${interaction.user.tag}` });
 
-        // --- إضافة المستطيلات العريضة المطابقة للصورة ---
-        const rows = [];
-        
-        if (isBuy) {
-            const itemVal = interaction.fields.getTextInputValue('item_field');
-            const payVal = interaction.fields.getTextInputValue('pay_field');
-            
-            // مستطيل "ما هو طلبك؟"
-            rows.push(new ActionRowBuilder().addComponents(
-                new ButtonBuilder().setCustomId('f_item').setLabel(itemVal).setStyle(ButtonStyle.Secondary).setDisabled(true)
-            ));
-            
-            staffEmbed.setDescription(staffEmbed.data.description + `\n\n**طريقة دفعك**`);
-            
-            // مستطيل "طريقة دفعك"
-            rows.push(new ActionRowBuilder().addComponents(
-                new ButtonBuilder().setCustomId('f_pay').setLabel(payVal).setStyle(ButtonStyle.Secondary).setDisabled(true)
-            ));
-        } else {
-            const issueVal = interaction.fields.getTextInputValue('issue_field');
-            rows.push(new ActionRowBuilder().addComponents(
-                new ButtonBuilder().setCustomId('f_issue').setLabel(issueVal).setStyle(ButtonStyle.Secondary).setDisabled(true)
-            ));
-        }
-
-        // أزرار التحكم
-        const staffButtons = new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setCustomId('claim_btn').setLabel('استلام التذكرة').setStyle(ButtonStyle.Success),
+        const controlButtons = new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setCustomId('delete_btn').setLabel('إغلاق التذكرة').setStyle(ButtonStyle.Danger),
             new ButtonBuilder().setCustomId('rename_btn').setLabel('تغيير الاسم').setStyle(ButtonStyle.Primary),
-            new ButtonBuilder().setCustomId('delete_btn').setLabel('إغلاق التذكرة').setStyle(ButtonStyle.Danger)
+            new ButtonBuilder().setCustomId('claim_btn').setLabel('استلام التذكرة').setStyle(ButtonStyle.Success)
         );
-        rows.push(staffButtons);
 
-        await ticketChannel.send({ content: `<@${interaction.user.id}> | <@&${ADMIN_ROLE_ID}>`, embeds: [staffEmbed], components: rows });
-        await interaction.editReply({ content: `✅ تم إنشاء تذكرتك بنجاح: ${ticketChannel}` });
+        const remindRow = new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setCustomId('remind_btn').setLabel('تذكير العضو').setStyle(ButtonStyle.Secondary)
+        );
+
+        await ticketChannel.send({ 
+            content: `<@${interaction.user.id}> | <@&${ADMIN_ROLE_ID}>`, 
+            embeds: [ticketEmbed], 
+            components: [controlButtons, remindRow] 
+        });
+
+        await interaction.editReply(`✅ تم إنشاء تذكرتك: ${ticketChannel}`);
+    }
+
+    // 3. أزرار التحكم في التذاكر
+    if (interaction.isButton()) {
+        const { customId, member, channel } = interaction;
+        
+        if (['claim_btn', 'delete_btn', 'rename_btn', 'remind_btn'].includes(customId)) {
+            if (!member.roles.cache.has(ADMIN_ROLE_ID)) return interaction.reply({ content: "❌ للإدارة فقط.", ephemeral: true });
+
+            if (customId === 'claim_btn') {
+                await channel.send({ embeds: [new EmbedBuilder().setColor(0x2ecc71).setDescription(`🔒 تم الاستلام بواسطة: ${interaction.user}`)] });
+            }
+            if (customId === 'delete_btn') {
+                await interaction.reply("⚠️ جاري الحذف...");
+                setTimeout(() => channel.delete(), 3000);
+            }
+            if (customId === 'remind_btn') {
+                await channel.send(`🔔 تذكير للعميل: يرجى الرد لإتمام طلبك.`);
+            }
+        }
     }
 });
 
-client.login(process.env.TOKEN);
+client.login(TOKEN);
