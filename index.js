@@ -248,7 +248,7 @@ client.on('interactionCreate', async (interaction) => {
 
         if (choice === 'buy_option') {
             const itemField = new TextInputBuilder().setCustomId('item_field').setLabel('ما هو الشيء الذي ترغب بشرائه؟').setStyle(TextInputStyle.Short).setRequired(true);
-            const payField = new TextInputBuilder().setCustomId('pay_field').setLabel('ما هي طريقة الدفع المفضلة لديك؟').setStyle(TextInputStyle.Short).setRequired(true);
+            const payField = new TextInputBuilder().setCustomId('pay_field').setLabel('ما هي طريقة الدفع الخاصه بك؟').setStyle(TextInputStyle.Short).setRequired(true);
             ticketModal.addComponents(new ActionRowBuilder().addComponents(itemField), new ActionRowBuilder().addComponents(payField));
         } else {
             const issueField = new TextInputBuilder().setCustomId('issue_field').setLabel('يرجى وصف مشكلتك بالتفصيل').setStyle(TextInputStyle.Paragraph).setRequired(true);
