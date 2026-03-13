@@ -211,7 +211,6 @@ function startRoulette(message, players) {
   }
 }
 
-client.login("YOUR_BOT_TOKEN");
     // --- أمر إنشاء التكت الرئيسي ---
     if (message.content === '!تكت') {
         if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) return;
