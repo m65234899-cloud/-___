@@ -124,7 +124,94 @@ if (message.content.startsWith('!رسالة')) {
         message.reply("**❌ الآيدي غير صحيح (ليس روم ولا رتبة)**");
     }
 }
+const { Client, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
 
+let players = [];
+let registering = false;
+
+client.once('ready', () => {
+  console.log('البوت جاهز!');
+});
+
+client.on('messageCreate', async (message) => {
+  if (message.content === "!روليت" && !registering) {
+
+    registering = true;
+    players = [];
+
+    // إعداد الرسالة مع الصورة
+    const embed = new EmbedBuilder()
+      .setTitle("🎡 لعبة روليت ")
+      .setColor("Purple")
+      .setImage("https://cdn.discordapp.com/attachments/1473378884857630821/1481918815309660281/roulette.png?ex=69b50ff2&is=69b3be72&hm=8b64dc569bc2b83fa2a023eafbd25117e79425ee2f497edb63c15722de6782c6&")  // ضع رابط الصورة هنا
+
+    const row = new ActionRowBuilder()
+      .addComponents(
+        new ButtonBuilder().setCustomId("join").setLabel("دخول").setStyle(ButtonStyle.Success),
+        new ButtonBuilder().setCustomId("leave").setLabel("خروج").setStyle(ButtonStyle.Danger)
+      );
+
+    const gameMessage = await message.channel.send({ embeds: [embed], components: [row] });
+
+    // فتح التسجيل لمدة 30 ثانية
+    setTimeout(async () => {
+      registering = false;
+
+      // غلق الأزرار بعد الوقت
+      const disabledRow = new ActionRowBuilder()
+        .addComponents(
+          new ButtonBuilder().setCustomId("join").setLabel("دخول").setStyle(ButtonStyle.Success).setDisabled(true),
+          new ButtonBuilder().setCustomId("leave").setLabel("خروج").setStyle(ButtonStyle.Danger).setDisabled(true)
+        );
+
+      await gameMessage.edit({ components: [disabledRow] });
+
+      // بدء اللعبة
+      startRoulette(message, players);
+    }, 30000);
+  }
+});
+
+// التفاعل مع الأزرار
+client.on('interactionCreate', async (interaction) => {
+  if (!interaction.isButton()) return;
+
+  if (registering === false) {
+    return interaction.reply({ content: "التسجيل انتهى!", ephemeral: true });
+  }
+
+  if (interaction.customId === "join") {
+    if (!players.includes(interaction.user.id)) {
+      players.push(interaction.user.id);
+      interaction.reply({ content: `تم تسجيلك!`, ephemeral: true });
+    }
+  }
+
+  if (interaction.customId === "leave") {
+    players = players.filter(player => player !== interaction.user.id);
+    interaction.reply({ content: `تم خروجك من اللعبة!`, ephemeral: true });
+  }
+});
+
+// بدء لعبة روليت
+function startRoulette(message, players) {
+  if (players.length === 0) {
+    return message.channel.send("لا يوجد لاعبين للعب!");
+  }
+
+  const winner = players[Math.floor(Math.random() * players.length)];
+  message.channel.send(`🎉 الفائز في الروليت هو: <@${winner}>`);
+
+  // إزالة أحد اللاعبين بعد كل دورة
+  if (players.length > 1) {
+    setTimeout(() => startRoulette(message, players), 5000); // تكرار الدورة بعد 5 ثوانٍ
+  } else {
+    message.channel.send(`🎉 **اللاعب الأخير** هو: <@${players[0]}>! لقد فزت باللعبة!`);
+  }
+}
+
+client.login("YOUR_BOT_TOKEN");
     // --- أمر إنشاء التكت الرئيسي ---
     if (message.content === '!تكت') {
         if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) return;
