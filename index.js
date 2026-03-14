@@ -134,96 +134,134 @@ client.once('ready', () => {
   console.log('البوت جاهز!');
 });
 
-    // --- أمر الروليت الجديد ---
-    if (message.content.startsWith('!روليت') || message.content.startsWith('•روليت')) {
-        let roulettePlayers = [];
-        const maxPlayers = 20;
+// --- [ متغيرات خارج نطاق الأمر للتحكم في حالة اللعبة ] ---
+let isRouletteRunning = false;
+let currentRouletteCollector = null;
+let currentRouletteGameActive = false;
 
-        const registrationEmbed = new EmbedBuilder()
-            .setTitle('🎲 بدأت لعبة الروليت!')
-            .setDescription(`اضغط على الأزرار للدخول أو الخروج.\n**الحد الأقصى:** ${maxPlayers} لاعب\n**الوقت:** 50 ثانية`)
-            .setImage('https://cdn.discordapp.com/attachments/1473378884857630821/1481918815309660281/roulette.png?ex=69b5b8b2&is=69b46732&hm=3f11802ee1a3d3f3d8eb52d5e5bffea70cd947901f0399c36b6b07367eb4d9ef&')
-            .setColor('#2b2d31');
+// --- [ أمر الروليت ] ---
+if (message.content === '•روليت' || message.content === '!روليت') {
+    const ALLOWED_ROLE_ID = '1472309571765928233';
+    if (!message.member.roles.cache.has(ALLOWED_ROLE_ID)) return message.reply("**❌ للإدارة فقط.**");
 
-        const regRow = new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setCustomId('roulette_join').setLabel('دخول').setStyle(ButtonStyle.Secondary),
-            new ButtonBuilder().setCustomId('roulette_leave').setLabel('خروج').setStyle(ButtonStyle.Secondary)
-        );
-
-        const regMsg = await message.channel.send({ embeds: [registrationEmbed], components: [regRow] });
-
-        const collector = regMsg.createMessageComponentCollector({ time: 50000 });
-
-        collector.on('collect', async (i) => {
-            if (i.customId === 'roulette_join') {
-                if (roulettePlayers.find(p => p.id === i.user.id)) return i.reply({ content: 'أنت مسجل بالفعل!', ephemeral: true });
-                if (roulettePlayers.length >= maxPlayers) return i.reply({ content: 'اللعبة ممتلئة!', ephemeral: true });
-                roulettePlayers.push(i.user);
-                await i.reply({ content: `تم تسجيلك! (العدد: ${roulettePlayers.length})`, ephemeral: true });
-            } else if (i.customId === 'roulette_leave') {
-                if (!roulettePlayers.find(p => p.id === i.user.id)) return i.reply({ content: 'لست في القائمة.', ephemeral: true });
-                roulettePlayers = roulettePlayers.filter(p => p.id !== i.user.id);
-                await i.reply({ content: 'تم خروجك.', ephemeral: true });
-            }
-        });
-
-        collector.on('end', async () => {
-            await regMsg.edit({ components: [] }).catch(() => {});
-            if (roulettePlayers.length < 2) return message.channel.send('❌ ألغيت اللعبة (تحتاج لاعبين على الأقل).');
-
-            await message.channel.send(`✅ انتهى التسجيل! بدأت اللعبة بـ **${roulettePlayers.length}** لاعب.`);
-
-            while (roulettePlayers.length > 1) {
-                await new Promise(r => setTimeout(r, 2000));
-                const selector = roulettePlayers[Math.floor(Math.random() * roulettePlayers.length)];
-                let listText = roulettePlayers.map((p, idx) => `**${idx + 1}** - ${p.username}`).join('\n');
-
-                const gameEmbed = new EmbedBuilder()
-                    .setTitle('🎯 الروليت اختار: ' + selector.username)
-                    .setDescription(`اختر رقم الشخص الذي تود طرده أو انسحب:\n\n${listText}`)
-                    .setColor('#f1c40f');
-
-                const rows = [];
-                let currentRow = new ActionRowBuilder();
-                roulettePlayers.forEach((p, idx) => {
-                    if (p.id === selector.id) return;
-                    const btn = new ButtonBuilder().setCustomId(`kick_${p.id}`).setLabel(`${idx + 1}`).setStyle(ButtonStyle.Secondary);
-                    if (currentRow.components.length < 5) currentRow.addComponents(btn);
-                    else { rows.push(currentRow); currentRow = new ActionRowBuilder().addComponents(btn); }
-                });
-                if (currentRow.components.length > 0) rows.push(currentRow);
-                rows.push(new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('withdraw').setLabel('انسحاب').setStyle(ButtonStyle.Danger)));
-
-                const gameMsg = await message.channel.send({ content: `${selector}`, embeds: [gameEmbed], components: rows });
-
-                try {
-                    const decision = await gameMsg.awaitMessageComponent({
-                        filter: i => i.user.id === selector.id,
-                        time: 30000,
-                        componentType: ComponentType.Button
-                    });
-
-                    let eliminated;
-                    if (decision.customId === 'withdraw') {
-                        eliminated = selector;
-                        await decision.reply(`قرر ${selector.username} الانسحاب! 👋`);
-                    } else {
-                        const tId = decision.customId.replace('kick_', '');
-                        eliminated = roulettePlayers.find(p => p.id === tId);
-                        await decision.reply(`قام ${selector.username} بطرد **${eliminated.username}** 💀`);
-                    }
-                    roulettePlayers = roulettePlayers.filter(p => p.id !== eliminated.id);
-                    await gameMsg.delete().catch(() => {});
-                } catch (e) {
-                    roulettePlayers = roulettePlayers.filter(p => p.id !== selector.id);
-                    await message.channel.send(`⏰ انتهى وقت ${selector.username} وتم استبعاده.`);
-                    await gameMsg.delete().catch(() => {});
-                }
-            }
-            message.channel.send(`🏆 **الفائز هو: ${roulettePlayers[0]} مبروك!**`);
-        });
+    // التحقق إذا كانت هناك لعبة جارية
+    if (isRouletteRunning) {
+        return message.reply("**⚠️ هناك لعبة روليت جارية بالفعل، انتظر حتى تنتهي!**");
     }
 
+    isRouletteRunning = true;
+    currentRouletteGameActive = true;
+    let players = [];
+
+    const regEmbed = new EmbedBuilder()
+        .setTitle('🎲 بدأت لعبة الروليت!')
+        .setDescription(`اضغط على الأزرار للدخول أو الخروج.\n**الحد الأقصى:** 20 لاعب\n**الوقت:** 50 ثانية`)
+        .setImage('https://cdn.discordapp.com/attachments/1473378884857630821/1481918815309660281/roulette.png?ex=69b5b8b2&is=69b46732&hm=3f11802ee1a3d3f3d8eb52d5e5bffea70cd947901f0399c36b6b07367eb4d9ef&')
+        .setColor('#2b2d31');
+
+    const regRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId('join_r').setLabel('دخول').setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder().setCustomId('leave_r').setLabel('خروج').setStyle(ButtonStyle.Secondary)
+    );
+
+    const regMsg = await message.channel.send({ embeds: [regEmbed], components: [regRow] });
+    currentRouletteCollector = regMsg.createMessageComponentCollector({ time: 50000 });
+
+    currentRouletteCollector.on('collect', async (i) => {
+        if (i.customId === 'join_r') {
+            if (players.find(p => p.id === i.user.id)) return i.reply({ content: 'أنت مسجل بالفعل!', ephemeral: true });
+            if (players.length >= 20) return i.reply({ content: 'ممتلئة!', ephemeral: true });
+            players.push(i.user);
+            await i.reply({ content: `تم تسجيلك! (${players.length}/20)`, ephemeral: true });
+        } else if (i.customId === 'leave_r') {
+            players = players.filter(p => p.id !== i.user.id);
+            await i.reply({ content: 'تم خروجك.', ephemeral: true });
+        }
+    });
+
+    currentRouletteCollector.on('end', async () => {
+        await regMsg.edit({ components: [] }).catch(() => {});
+        if (!currentRouletteGameActive) return; // تم إيقاف اللعبة يدوياً
+
+        if (players.length < 2) {
+            isRouletteRunning = false;
+            return message.channel.send('❌ ألغيت اللعبة لنقص اللاعبين.');
+        }
+
+        await message.channel.send(`✅ بدأت اللعبة بـ **${players.length}** لاعب.`);
+
+        while (players.length > 1 && currentRouletteGameActive) {
+            await new Promise(r => setTimeout(r, 2000));
+            const selector = players[Math.floor(Math.random() * players.length)];
+            let listDisplay = players.map((p, idx) => `**${idx + 1}** - ${p.username}`).join('\n');
+
+            const gameEmbed = new EmbedBuilder()
+                .setTitle('🎯 الدور عند: ' + selector.username)
+                .setDescription(`اختر رقم الشخص لطرده أو انسحب:\n\n${listDisplay}`)
+                .setColor('#f1c40f');
+
+            const rows = [];
+            let currentRow = new ActionRowBuilder();
+            players.forEach((p, idx) => {
+                if (p.id === selector.id) return;
+                const btn = new ButtonBuilder().setCustomId(`kick_${p.id}`).setLabel(`${idx + 1}`).setStyle(ButtonStyle.Secondary);
+                if (currentRow.components.length < 5) currentRow.addComponents(btn);
+                else { rows.push(currentRow); currentRow = new ActionRowBuilder().addComponents(btn); }
+            });
+            if (currentRow.components.length > 0) rows.push(currentRow);
+            rows.push(new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('withdraw_r').setLabel('انسحاب').setStyle(ButtonStyle.Danger)));
+
+            const gameMsg = await message.channel.send({ content: `${selector}`, embeds: [gameEmbed], components: rows });
+
+            try {
+                const choice = await gameMsg.awaitMessageComponent({
+                    filter: i => i.user.id === selector.id,
+                    time: 30000,
+                    componentType: ComponentType.Button
+                });
+
+                if (!currentRouletteGameActive) return; // توقف أثناء الانتظار
+
+                let elim;
+                if (choice.customId === 'withdraw_r') {
+                    elim = selector;
+                    await choice.reply(`**${selector.username}** انسحب! 👋`);
+                } else {
+                    const targetId = choice.customId.replace('kick_', '');
+                    elim = players.find(p => p.id === targetId);
+                    await choice.reply(`طرد **${selector.username}** اللاعب **${elim.username}** 💀`);
+                }
+                players = players.filter(p => p.id !== elim.id);
+                await gameMsg.delete().catch(() => {});
+            } catch (e) {
+                players = players.filter(p => p.id !== selector.id);
+                await message.channel.send(`⏰ استبعاد ${selector} لعدم الرد.`);
+                await gameMsg.delete().catch(() => {});
+            }
+        }
+
+        if (currentRouletteGameActive) {
+            message.channel.send(`🏆 **الفائز النهائي: ${players[0]}**`);
+        }
+        isRouletteRunning = false;
+        currentRouletteGameActive = false;
+    });
+}
+
+// --- [ أمر التوقيف ] ---
+if (message.content === '•توقيف' || message.content === '!توقيف') {
+    const ALLOWED_ROLE_ID = '1472309571765928233';
+    if (!message.member.roles.cache.has(ALLOWED_ROLE_ID)) return message.reply("**❌ للإدارة فقط.**");
+
+    if (!isRouletteRunning) return message.reply("**⚠️ لا توجد لعبة جارية حالياً لإيقافها.**");
+
+    isRouletteRunning = false;
+    currentRouletteGameActive = false;
+    if (currentRouletteCollector) currentRouletteCollector.stop();
+    
+    await message.channel.send("🛑 **تم إيقاف لعبة الروليت فوراً بواسطة الإدارة.**");
+}
+ 
     // --- أمر إنشاء التكت الرئيسي ---
     if (message.content === '!تكت') {
         if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) return;
